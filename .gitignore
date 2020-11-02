@@ -102,3 +102,13 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Errata
+.DS_Store
+.zip
+.shp
+.shx
+.prj
+.dbf
+.cpg
+.xml
