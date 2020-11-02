@@ -84,3 +84,66 @@ psql maptember_2020 -c "
     FROM day1
   )
 "
+
+######################################################################
+# DAY 3: POLYGONS
+######################################################################
+
+# It's election day! Friggin' vote!
+# On this theme I'm going to cast Voronoi polygons around Vermont's 
+# polling places (already geocoded, helpfully hosted by our Secretary of State)
+wget -c https://www.dropbox.com/s/ucdojode9jc2w37/vt_polling_places_2020.csv?dl=1 -O vt_polling_places_2020.csv
+
+# create shell table
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS vt_polling_places_2020;
+  CREATE TABLE vt_polling_places_2020 (
+    latitude float,
+    longitude float,
+    town text,
+    general_election_polling_place text,
+    street_address text,
+    polls_open text,
+    covid_voting_method text
+  );
+"
+
+# import data and add geometry
+psql maptember_2020 -c "\COPY vt_polling_places_2020 FROM 'vt_polling_places_2020.csv' CSV HEADER;
+  SELECT AddGeometryColumn ('public','vt_polling_places_2020','the_geom_32145',32145,'GEOMETRY',2);
+  UPDATE vt_polling_places_2020 
+  SET the_geom_32145 = ST_Transform(
+    ST_GeomFromText(
+      'POINT(' || longitude || ' ' || latitude || ')',
+      4326
+    ),
+    32145
+  );
+"
+
+# build voronois
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day3;
+  CREATE TABLE day3 AS (
+    WITH v AS (
+      SELECT (
+        ST_Dump(
+          ST_VoronoiPolygons(
+            ST_Collect(the_geom_32145),
+            100,
+            (SELECT wkb_geometry FROM vt_border)
+          )
+        )
+      ).geom AS the_geom_32145
+      FROM vt_polling_places_2020
+    )
+    -- And clip out with the state boundary
+    SELECT
+      uuid_generate_v4() AS id,
+      ST_Intersection(
+        the_geom_32145,
+        (SELECT ST_Buffer(wkb_geometry,1000) FROM vt_border)
+      ) AS the_geom_32145
+    FROM v
+  )
+"
