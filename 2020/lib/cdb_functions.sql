@@ -1,3 +1,4 @@
+-- Adapted (read: simplified) from https://github.com/CartoDB/cartodb-postgresql/blob/362af5e6a0792ce65e8a842cdc1c0dd36d6da6ad/scripts-available/CDB_Hexagon.sql
 -- Return an Hexagon with given center and side (or maximal radius)
 CREATE OR REPLACE FUNCTION CDB_MakeHexagon(center GEOMETRY, radius FLOAT8)
 RETURNS GEOMETRY
