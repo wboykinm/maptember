@@ -235,3 +235,19 @@ psql maptember_2020 -c "
     GROUP BY g.the_geom_32145
   )
 "
+
+######################################################################
+# DAY 5: BLUE
+######################################################################
+
+# Going fairly simple today. No preprocessing because the feature is
+# already imported: the Vermont state border
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day5;
+  CREATE TABLE day5 AS (
+    SELECT
+      * 
+    FROM vt_border
+  )
+"
