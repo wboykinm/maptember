@@ -317,8 +317,29 @@ psql maptember_2020 -c "
 "
 psql maptember_2020 -c "\COPY vt_prez_2020 FROM 'data/data-ezDzH.csv' CSV HEADER;"
 
-
 # Also, get town boundaries from the wonderful VCGI:
 wget -c https://opendata.arcgis.com/datasets/0e4a5d2d58ac40bf87cd8aa950138ae8_39.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_towns.zip
 unzip vt_towns.zip
 ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" "VT_Data_-_Town_Boundaries.shp" -nlt MULTIPOLYGON -nln vt_towns
+
+# Let's crunch it all together!
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day6;
+  CREATE TABLE day6 AS (
+    SELECT
+      t.townname,
+      t.wkb_geometry AS the_geom_32145,
+      ST_Centroid(t.wkb_geometry) AS the_geom_point_32145,
+      max(g.total_votes) AS gov_total_votes,
+      max(g.winner) AS gov_winner,
+      max(g.winner_percent) AS gov_winner_percent,
+      max(p.total_votes) AS prez_total_votes,
+      max(p.winner) AS prez_winner,
+      max(p.winner_percent) AS prez_winner_percent,
+      max(g.phil_scott) - max(p.donald_j_trump_and_michael_r_pence) AS gov_outperformance
+    FROM vt_towns t
+    LEFT JOIN vt_gov_2020 g ON g.town = t.townname
+    LEFT JOIN vt_prez_2020 p ON p.town = t.townname
+    GROUP BY t.townname,t.wkb_geometry
+  );
+"
