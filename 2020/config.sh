@@ -251,3 +251,74 @@ psql maptember_2020 -c "
     FROM vt_border
   )
 "
+
+######################################################################
+# DAY 6: RED
+######################################################################
+
+# Against my better judgement, I'm going to show the vote differential in the
+# VT Governor's election, with data mercifully provided by local outlet extraordinaire
+# VTDigger: https://vtdigger.org/2020/11/04/how-vermonters-voted-in-tuesdays-top-races-town-by-town/
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS vt_gov_2020;
+  CREATE TABLE vt_gov_2020 (
+    town text,
+    emily_peyton int,
+    erynn_hazlett_whitney int,
+    david_zuckerman int,
+    michael_a_devost int,
+    phil_scott int,
+    kevin_hoyt int,
+    wayne_billado_iii int,
+    charly_dickerson int,
+    john_klar int,
+    spoiled_votes int,
+    blank_votes int,
+    total_write_ins int,
+    total_votes int,
+    winner text,
+    winner_percent float
+  );
+"
+psql maptember_2020 -c "\COPY vt_gov_2020 FROM 'data/data-WkZ49.csv' CSV HEADER;"
+
+# . . . and presidential results:
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS vt_prez_2020;
+  CREATE TABLE vt_prez_2020 (
+    town text,
+    sum_of_roque_rocky_de_la_fuente_and_darcy_g_richardson int,
+    sum_of_brian_carroll_and_amar_patel int,
+    sum_of_blake_huber_and_frank_atwood int,
+    sum_of_jerome_segal_and_john_de_graaf int,
+    sum_of_keith_mccormic_and_sam_blasiak int,
+    sum_of_christopher_lafontaine_and_michael_speed int,
+    sum_of_don_blankenship_and_bill_mohr int,
+    sum_of_howie_hawkins_and_angela_walker int,
+    sum_of_h_brooke_paige_and_thomas_james_witman int,
+    sum_of_kanye_west_and_michelle_tidball int,
+    sum_of_kyle_kenley_kopitke_and_taja_yvonne_iwanow int,
+    sum_of_jo_jorgensen_and_jeremy_spike_cohen int,
+    sum_of_gloria_lariva_and_sunil_freeman int,
+    sum_of_phil_collins_and_billy_joe_parker int,
+    sum_of_richard_duncan_and_mitch_bupp int,
+    zachary_scalf_and_matthew_lyda int,
+    alyson_kennedy_and_malcolm_jarrett int,
+    brock_pierce_and_karla_ballard int,
+    donald_j_trump_and_michael_r_pence int,
+    joseph_r_biden_and_kamala_d_harris int,
+    spoiled_votes int,
+    blank_votes int,
+    total_writeins int,
+    total_votes int,
+    winner text,
+    winner_percent text
+  );
+"
+psql maptember_2020 -c "\COPY vt_prez_2020 FROM 'data/data-ezDzH.csv' CSV HEADER;"
+
+
+# Also, get town boundaries from the wonderful VCGI:
+wget -c https://opendata.arcgis.com/datasets/0e4a5d2d58ac40bf87cd8aa950138ae8_39.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_towns.zip
+unzip vt_towns.zip
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" "VT_Data_-_Town_Boundaries.shp" -nlt MULTIPOLYGON -nln vt_towns
