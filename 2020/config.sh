@@ -343,3 +343,36 @@ psql maptember_2020 -c "
     GROUP BY t.townname,t.wkb_geometry
   );
 "
+
+######################################################################
+# DAY 7: GREEN
+######################################################################
+
+# Returning to placenames for this one, let's look at occurrences of the word "green" in VT
+# Can't imagine there are too many . . .
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day7;
+  CREATE TABLE day7 AS (
+    SELECT
+      *
+    FROM vt_placenames
+    WHERE gname ILIKE '%green%'
+  )
+"
+
+######################################################################
+# DAY 8: YELLOW
+######################################################################
+
+# Now trying "yellow"
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day8;
+  CREATE TABLE day8 AS (
+    SELECT
+      *
+    FROM vt_placenames
+    WHERE gname ILIKE '%yellow%'
+  )
+"
