@@ -376,3 +376,32 @@ psql maptember_2020 -c "
     WHERE gname ILIKE '%yellow%'
   )
 "
+
+######################################################################
+# DAY 9: MONOCHROME
+######################################################################
+
+# This is going to be a bit of a cheat, since my basemap here has been 
+# b&w from the jump. But to make it interesting I'm going to add contours!
+wget -c https://opendata.arcgis.com/datasets/4e119b631fd2492c86bf81b060b9ccb0_3.zip?outSR=%7B%22wkid%22%3A32145%2C%22latestWkid%22%3A32145%7D -O vt_contours_50.zip
+unzip vt_contours_50.zip
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" "VT_50_foot_contours_generated_from_USGS_30_meter_NED_DEM.shp" -nln vt_contours_50
+
+# There are 60k+ contour features. Let's cut 'em (read: "clip") to the border we're using.
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day9;
+  CREATE TABLE day9 AS (
+    SELECT
+      c.contour,
+      ST_Intersection(
+        c.wkb_geometry,
+        b.wkb_geometry
+      ) AS the_geom_32145
+    FROM vt_contours_50 c, vt_border b
+  )
+"
+
+# Remember that 10% of mapmaking that ISN'T data processing? yeah, that's
+# been happening in QGIS. In this case, using a gradient based on the
+# Financial Times' background color (which I LOVE):
+# ['#000000','#552700','#aa4e00','#ff7500','#fea355','#ffd1a9','#ffffff]
