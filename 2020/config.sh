@@ -405,3 +405,74 @@ psql maptember_2020 -c "
 # been happening in QGIS. In this case, using a gradient based on the
 # Financial Times' background color (which I LOVE):
 # ['#000000','#552700','#aa4e00','#ff7500','#fea355','#ffd1a9','#ffffff]
+
+######################################################################
+# DAY 10: GRID
+######################################################################
+
+# But we already used hexagooooooooons! Okay, let's go squares.
+
+# Add a grid-generating function from teh internetz
+psql maptember_2020 -f lib/general_functions.sql
+
+# Lets also get wild by bringing in Microsoft's building set for the state
+wget -c https://usbuildingdata.blob.core.windows.net/usbuildings-v1-1/Vermont.zip -O Vermont.zip
+unzip Vermont.zip
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" Vermont.geojson -nlt MULTIPOLYGON -nln vt_buildings
+
+# Set a few constants:
+SIDE=2000
+MAX_COUNT=200
+
+# Build the grid record over the state
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day10;
+  CREATE TABLE day10 AS (
+    WITH grid AS (
+      SELECT 
+        ST_Transform(the_geom,32145) AS the_geom_32145
+      FROM (
+        SELECT (
+          -- This bit forms a grid over the VT bbox
+          ST_Dump(
+            makegrid_2d(
+              (SELECT ST_Envelope(ST_Transform(wkb_geometry,4326)) FROM vt_border),
+              ${SIDE},
+              ${SIDE}
+            )
+          )
+      ).geom AS the_geom) AS grid
+      -- . . . and then grab just the cells that overlap the state proper
+      WHERE ST_Intersects(
+        the_geom,
+        (SELECT ST_Transform(wkb_geometry,4326) FROM vt_border)
+      )
+    ),
+    building_stats AS (
+      -- join sampled MS building counts to the cells
+      SELECT
+        g.the_geom_32145,
+        count(b.*) AS buildings
+      FROM grid g
+      LEFT JOIN (
+        SELECT *
+        FROM vt_buildings 
+        WHERE random() < 0.1
+      ) b ON ST_Intersects(g.the_geom_32145,b.wkb_geometry)
+      GROUP BY g.the_geom_32145
+    )
+    -- Then adjust cell size by building count
+    SELECT
+      buildings,
+      buildings / ${MAX_COUNT}::float AS ratio,
+      -- Wild stuff required here: https://gis.stackexchange.com/a/29893/10198
+      ST_Translate(
+        -- Scale down the features!
+        ST_Scale(the_geom_32145,buildings / ${MAX_COUNT}::float,buildings / ${MAX_COUNT}::float),
+        -- Then move them back where they came from!
+        ST_X(ST_Centroid(the_geom_32145))*(1 - (buildings / ${MAX_COUNT}::float)),
+        ST_Y(ST_Centroid(the_geom_32145))*(1 - (buildings / ${MAX_COUNT}::float))
+      ) AS the_geom_32145 
+    FROM building_stats
+  )
+"
