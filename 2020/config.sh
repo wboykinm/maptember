@@ -476,3 +476,33 @@ psql maptember_2020 -c "
     FROM building_stats
   )
 "
+
+######################################################################
+# DAY 11: 3D
+######################################################################
+
+# Off the deep end! While only-vaguely 3d, this time we'll follow the ever-popular
+# https://somethingaboutmaps.wordpress.com/2017/11/16/creating-shaded-relief-in-blender/
+
+# Set VT SRTM tiles, then grab and unzip them (only works with auth, unfortunately)
+VT_SRTM=( 'N44W074' 'N44W073' 'N44W072' 'N43W073' 'N43W074' 'N42W073' 'N42W074' )
+for t in "${VT_SRTM[@]}"; do
+  wget -c http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/${t}.SRTMGL1.hgt.zip -O ${t}.zip
+  unzip ${t}.zip
+done
+
+# Combine the SRTM tiles and convert to .tif
+gdal_merge.py -o data/srtm_30m/srtm_30m_vt.tif data/srtm_30m/N4*.hgt
+
+# Pull out geojson of the state border and clip the raster with it
+psql maptember_2020 -t -c "
+  SELECT 
+    ST_AsGeoJSON(
+      ST_Transform(wkb_geometry,4326)
+    ) 
+  FROM vt_border
+" > vt_border.geojson
+gdalwarp -t_srs "EPSG:32145" -ot UInt16 -cutline vt_border.geojson data/srtm_30m/srtm_30m_vt.tif data/srtm_30m/srtm_30m_vt_clipped.tif
+gdal_translate -scale 0 1201 0 65535 data/srtm_30m/srtm_30m_vt_clipped.tif data/srtm_30m/srtm_30m_vt_scaled.tif
+
+# Head on over to blender and follow the instructions at the link above. Mayhem ensues!
