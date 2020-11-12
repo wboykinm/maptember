@@ -506,3 +506,33 @@ gdalwarp -t_srs "EPSG:32145" -ot UInt16 -cutline vt_border.geojson data/srtm_30m
 gdal_translate -scale 0 1201 0 65535 data/srtm_30m/srtm_30m_vt_clipped.tif data/srtm_30m/srtm_30m_vt_scaled.tif
 
 # Head on over to blender and follow the instructions at the link above. Mayhem ensues!
+# With output in hand . . .
+
+# Get the worldfile from the original
+gdal_translate -co "TFW=YES" data/srtm_30m/srtm_30m_vt_scaled.tif data/srtm_30m/srtm_30m_vt_tfw.tif
+
+# Apply it to the blender output (and cross fingers)
+cp data/srtm_30m/srtm_30m_vt_tfw.tfw data/srtm_30m/vt_srtm30m_relief.tfw
+gdal_translate -a_srs "EPSG:32145" -of GTiff data/srtm_30m/vt_srtm30m_relief.tif data/srtm_30m/vt_srtm30m_relief_geo.tif
+
+######################################################################
+# DAY 12: MAP NOT MADE WITH GIS SOFTWARE
+######################################################################
+
+# What with the rise of geospatial data science, there are lots of options here, but
+# what the hell - let's use paint. First let's make something traceable.
+# Using this high-contrast d3js thing: http://bl.ocks.org/wboykinm/c450c20af3519a07c8ea405acd2a3292
+# . . . but locally, stashed here in lib/, so fire up an http server:
+
+static-server -p 8000
+
+# Then visit http://localhost:8000/lib/day12.html, ctrl-j to bring up the js console, then enter
+# document.body.setAttribute( "style", "-webkit-transform: rotate(-90deg);");
+# . . . to better fit the state to the screen
+
+# Literally tape a sheet of printer paper to the screen, crank up the brightness,
+# and trace the feature outlines lightly on. Then remove from the laptop,
+# bust out the watercolors, and fill in those polygons that are just begging
+# for some saturation. Scan back in when done. 
+
+# NO GIS-ES WERE INJURED IN THE MAKING OF THIS MAP.

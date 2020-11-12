@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  .county-boundary {
+		fill: none;
+		stroke: #333;
+    stroke-width: 2px;
+		stroke-linejoin: round;
+	}
+	.state-boundary {
+		fill: none;
+		stroke: #333;
+		stroke-linejoin: round;
+	}
+
+	text {
+		font-family: helvetica;
+  		fill: black;
+  		font-weight: 300;
+  		text-anchor: middle;
+	}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+	height = 700;
+
+var svg = d3.select("body").append("svg")
+	.attr("width", width)
+	.attr("height", height);
+
+var projection = d3.geo.mercator()
+
+var path = d3.geo.path()
+	.projection(projection);
+
+d3.json("vt-counties.json", function(error, vt) {
+
+	var vermont = topojson.feature(vt, vt.objects.counties);
+
+	projection
+    	.scale(1)
+    	.translate([0, 0]);
+
+	var b = path.bounds(vermont),
+	    s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+	    t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+  	projection
+    	.scale(s)
+    	.translate(t);
+
+
+  	svg.selectAll(".counties")
+  		.data(topojson.feature(vt, vt.objects.counties).features)
+  		.enter().append("path")
+  			.attr("class", function(d) {return "county " + d.properties.name;})
+  			.attr("d", path)
+  			.style("fill", "white")
+
+
+  	svg.append("path")
+  		.datum(topojson.feature(vt, vt.objects.counties, function(a, b){return a !== b; }))
+  		.attr("d", path)
+  		.attr("class", "county-boundary");
+
+  	/*svg.selectAll(".county-label")
+    	.data(topojson.feature(vt, vt.objects.counties).features)
+  	.enter().append("text")
+	    .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; })
+	    .attr("dy", ".35em")
+	    .text(function(d) { return d.properties.name; })
+	    .style("font-size", "0px")
+	    .style("font-size", "12px");
+*/
+});
+
+d3.select(self.frameElement).style("height", height + "px");
+
+</script>
