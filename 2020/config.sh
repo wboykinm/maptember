@@ -536,3 +536,18 @@ static-server -p 8000
 # for some saturation. Scan back in when done. 
 
 # NO GIS-ES WERE INJURED IN THE MAKING OF THIS MAP.
+
+
+######################################################################
+# DAY 13: RASTER
+######################################################################
+
+# Working from Paul Ramsey's PostGIS raster demo:
+# https://info.crunchydata.com/blog/waiting-for-postgis-3-separate-raster-extension
+
+# Load the srtm dataset we prepared above into the DB:
+raster2pgsql -I -F -s 32145 -t 500x800 data/srtm_30m/srtm_30m_vt_clipped.tif srtm_30m_vt_clipped | psql maptember_2020
+
+# And . . . that's it! Render in QGIS over Mapbox Satellite tiles with "overlay"
+# blending set, and it neatly combines the two. But more importantly, YOU'VE 
+# LOADED A RASTER DATASET INTO POSTGIS. Celebrate accordingly.
