@@ -551,3 +551,33 @@ raster2pgsql -I -F -s 32145 -t 500x800 data/srtm_30m/srtm_30m_vt_clipped.tif srt
 # And . . . that's it! Render in QGIS over Mapbox Satellite tiles with "overlay"
 # blending set, and it neatly combines the two. But more importantly, YOU'VE 
 # LOADED A RASTER DATASET INTO POSTGIS. Celebrate accordingly.
+
+######################################################################
+# DAY 14: CLIMATE CHANGE
+######################################################################
+
+# In many ways, Vermont's wake-up moment to the effects of climate change
+# was in 2011, when hurricane Irene made landfall in NJ but then kept rolling north
+# Into the Green Mountains, doing flood damage the state hadn't seen in
+# nearly a century. Taking a look at the high-water marks from that storm
+# is a good way to realize that sea level rise isn't the only water-related
+# threat, and that even landlocked, mountainous regions are at risk.
+
+# Let's get the high water marks from USGS and bring them in:
+wget -c https://pubs.usgs.gov/ds/763/appendixes_final/ds763_appendix3.kmz
+unzip ds763_appendix3.kmz
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" doc.kml -nln vt_irene_hwm
+
+# Now let's get elevations for those points from our existing SRTM raster
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day14;
+  CREATE TABLE day14 AS (
+    SELECT
+      i.*,
+      ST_Value(s.rast,i.wkb_geometry) AS elevation
+    FROM vt_irene_hwm i
+    JOIN srtm_30m_vt_clipped s ON ST_Intersects(i.wkb_geometry,s.rast)
+  )
+"
+# Using SQL on raster is a liiiiiiiitle tough to wrap my head around, but the
+# implementation is simple enough for this sort of thing.
