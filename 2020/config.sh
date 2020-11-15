@@ -280,7 +280,7 @@ psql maptember_2020 -c "
     winner_percent float
   );
 "
-psql maptember_2020 -c "\COPY vt_gov_2020 FROM 'data/data-WkZ49.csv' CSV HEADER;"
+psql maptember_2020 -c "\COPY vt_gov_2020 FROM 'data/election/data-WkZ49.csv' CSV HEADER;"
 
 # . . . and presidential results:
 psql maptember_2020 -c "
@@ -315,7 +315,7 @@ psql maptember_2020 -c "
     winner_percent text
   );
 "
-psql maptember_2020 -c "\COPY vt_prez_2020 FROM 'data/data-ezDzH.csv' CSV HEADER;"
+psql maptember_2020 -c "\COPY vt_prez_2020 FROM 'data/election/data-ezDzH.csv' CSV HEADER;"
 
 # Also, get town boundaries from the wonderful VCGI:
 wget -c https://opendata.arcgis.com/datasets/0e4a5d2d58ac40bf87cd8aa950138ae8_39.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_towns.zip
@@ -581,3 +581,101 @@ psql maptember_2020 -c "
 "
 # Using SQL on raster is a liiiiiiiitle tough to wrap my head around, but the
 # implementation is simple enough for this sort of thing.
+
+######################################################################
+# DAY 15: CONNECTIONS
+######################################################################
+
+# A hockey tournament in Vermont's capital at the beginning of October 
+# has been identified by health officials as the source of the state's 
+# largest and most-widespread outbreak since the pandemic began.
+# Data provided by the DOH and VTDigger show how the participants
+# carried the virus around the state, sparking additional outbreaks.
+
+# Get data: https://vtdigger.org/2020/11/13/where-is-the-latest-wave-vermonts-recent-covid-cases-town-by-town/
+
+# MASSIVE CAVEATS
+# THESE ARE NOT THE LOCATIONS OF INDIVIDUALS
+# I AM NOT AN EPIDEMIOLOGICAL GEOGRAPHER
+# THIS IS AN INFERRED NETWORK - THERE IS NO AGENCY CONFIRMATION THAT 
+# THE SAME EVENT CAUSED ALL OF THESE INFECTIONS
+
+# Ingest
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS vtdigger_stats_20201113;
+  CREATE TABLE vtdigger_stats_20201113 (
+    town text,
+    culmulative_cases_1111 int,
+    culmulative_cases_1021 int,
+    change_since_oct_21 text
+  )
+"
+psql maptember_2020 -c "\COPY vtdigger_stats_20201113 FROM 'data/covid/vtdigger_stats_20201113.csv' CSV HEADER" 
+
+# Combine with town location and infer network
+MAX_DIST=7000
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day15a;
+  CREATE TABLE day15a AS (
+    -- Create the baseline table, with centroids by town
+    WITH baseline AS (
+      SELECT
+        s.town,
+        culmulative_cases_1111 - culmulative_cases_1021 AS case_increase,
+        ST_Centroid(t.wkb_geometry) AS the_geom_32145
+      FROM vtdigger_stats_20201113 s
+      JOIN vt_towns t ON t.townname = upper(s.town)
+    ),
+    -- Separate source and target
+    source AS (
+      SELECT
+        town,
+        'source'::text AS stage,
+        'none'::text AS parent,
+        the_geom_32145
+      FROM baseline 
+      WHERE town = 'Montpelier'
+    ),
+    spread AS (
+      SELECT
+        town,
+        'spread'::text AS stage,
+        'Montpelier'::text AS parent,
+        the_geom_32145 
+      FROM baseline 
+      WHERE town != 'Montpelier' AND case_increase > 3
+    ),
+    -- Add random points for each case at each target
+    target AS (
+      SELECT
+        town, 
+        'target'::text AS stage,
+        town::text AS parent,
+        -- Randomize geometry out to 5km
+        ST_Translate(the_geom_32145,(-${MAX_DIST}+(${MAX_DIST}*2)*random()),(-${MAX_DIST}+(${MAX_DIST}*2)*random())) AS the_geom_32145
+      FROM 
+        baseline,
+        generate_series(1,case_increase)
+      WHERE baseline.case_increase > 3
+    )
+    SELECT * FROM source
+    UNION ALL
+    SELECT * FROM spread
+    UNION ALL
+    SELECT * FROM target
+  )
+"
+
+# Make a second geometry, adding lines connecting dest to source
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day15b;
+  CREATE TABLE day15b AS (
+    SELECT
+      d1.stage || '_' || d2.stage AS type,
+      ST_Makeline(d1.the_geom_32145,d2.the_geom_32145) AS the_geom_32145
+    FROM day15a d1
+    JOIN day15a d2 ON d1.town = d2.parent
+    WHERE d1.stage IN ('source','spread')
+    AND d2.stage IN ('spread','target')
+  )
+"
