@@ -586,8 +586,8 @@ psql maptember_2020 -c "
 # DAY 15: CONNECTIONS
 ######################################################################
 
-# A hockey tournament in Vermont's capital at the beginning of October 
-# has been identified by health officials as the source of the state's 
+# A hockey tournament in New Hampshire at the beginning of October 
+# has been identified by health officials as the source of the Vermont's 
 # largest and most-widespread outbreak since the pandemic began.
 # Data provided by the DOH and VTDigger show how the participants
 # carried the virus around the state, sparking additional outbreaks.
@@ -677,5 +677,33 @@ psql maptember_2020 -c "
     JOIN day15a d2 ON d1.town = d2.parent
     WHERE d1.stage IN ('source','spread')
     AND d2.stage IN ('spread','target')
+  )
+"
+
+######################################################################
+# DAY 16: ISLAND(S)
+######################################################################
+
+# On a happier note, let's go back to the geologically-recent past 
+# and spend some time in the Champlain sea. We'll use the already-imported
+# SRTM data and continue looking at Paul Ramsey's PostGIS raster methods
+# https://info.crunchydata.com/blog/waiting-for-postgis-3-separate-raster-extension
+
+# Make polygons based on the elevation at the extent of the sea at water 
+# height maximum (~183m)
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day16;
+  CREATE TABLE day16 AS (
+    SELECT (
+      ST_DumpAsPolygons(
+        ST_Reclass(
+          ST_Union(rast),
+          '-1000-183:1-1, 183-5000:0-0',
+          '2BUI'
+        )
+      )
+    ).*
+    FROM srtm_30m_vt_clipped s
   )
 "
