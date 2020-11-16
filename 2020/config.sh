@@ -685,25 +685,53 @@ psql maptember_2020 -c "
 ######################################################################
 
 # On a happier note, let's go back to the geologically-recent past 
-# and spend some time in the Champlain sea. We'll use the already-imported
+# and spend some time elevation-generating the Champlain sea: 
+# https://en.wikipedia.org/wiki/Champlain_Sea
+
+# We'll use the already-imported
 # SRTM data and continue looking at Paul Ramsey's PostGIS raster methods
 # https://info.crunchydata.com/blog/waiting-for-postgis-3-separate-raster-extension
 
 # Make polygons based on the elevation at the extent of the sea at water 
 # height maximum (~183m)
-
 psql maptember_2020 -c "
-  DROP TABLE IF EXISTS day16;
-  CREATE TABLE day16 AS (
-    SELECT (
-      ST_DumpAsPolygons(
-        ST_Reclass(
-          ST_Union(rast),
-          '-1000-183:1-1, 183-5000:0-0',
-          '2BUI'
+  DROP TABLE IF EXISTS day16a;
+  CREATE TABLE day16a AS (
+    WITH overview AS (
+      SELECT (
+        ST_DumpAsPolygons(
+          ST_Reclass(
+            ST_Union(rast),
+            '-1000-183:1-1, 183-5000:0-0',
+            '2BUI'
+          )
         )
-      )
-    ).*
-    FROM srtm_30m_vt_clipped s
+      ).*
+      FROM srtm_30m_vt_clipped s
+    )
+    SELECT
+      ST_Intersection(
+        geom,
+        (SELECT wkb_geometry FROM vt_border)
+      ) AS the_geom_32145,
+      (CASE WHEN val = 0 THEN 'land' ELSE 'water' END) As type
+    FROM overview
   )
 "
+
+# Then buffer out the islands based on a VERY basic heuristic 
+# (everything smaller than 500MM sqm)
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day16b;
+  CREATE TABLE day16b AS (
+    SELECT 
+      ST_Union(ST_Buffer(the_geom_32145,1000)) AS the_geom_32145
+    FROM day16a
+    WHERE type = 'land'
+    AND ST_Area(the_geom_32145) < 500000000
+  )
+"
+
+# This is an elevation processing experiment. For ACTUAL Champlain sea extents,
+# see Van Hoesen et al., 2020: 
+# https://geodata.vermont.gov/datasets/VTANR::glacial-lakes-and-the-champlain-sea
