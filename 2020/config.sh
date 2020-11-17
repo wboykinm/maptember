@@ -735,3 +735,19 @@ psql maptember_2020 -c "
 # This is an elevation processing experiment. For ACTUAL Champlain sea extents,
 # see Van Hoesen et al., 2020: 
 # https://geodata.vermont.gov/datasets/VTANR::glacial-lakes-and-the-champlain-sea
+
+######################################################################
+# DAY 17: HISTORICAL
+######################################################################
+
+# Bypassing PostGIS for this one, instead we'll use mapwarper to "rectify" (LOL)
+# Samuel de Champlain's 1612 "Carte Geographique de la Nouvelle France", housed helpfully
+# in wikimedia commons: https://commons.wikimedia.org/wiki/File:Samuel_de_Champlain_Carte_geographique_de_la_Nouvelle_France.jpg
+
+# Upload to mapwarper: https://mapwarper.net/maps/51751
+
+# Really only the barest minimum of georeferencing is possible given the fact that
+# the modern concept of longitude didn't really exist yet in 1612, and the gentleman 
+# in question traveled Vermont solely by canoe. This is more of an art piece :)
+
+# Use built-in XYZ endpoint in QGIS: https://mapwarper.net/maps/tile/51751/{z}/{x}/{y}.png
