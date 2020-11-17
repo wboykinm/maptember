@@ -751,3 +751,37 @@ psql maptember_2020 -c "
 # in question traveled Vermont solely by canoe. This is more of an art piece :)
 
 # Use built-in XYZ endpoint in QGIS: https://mapwarper.net/maps/tile/51751/{z}/{x}/{y}.png
+
+######################################################################
+# DAY 18: LAND USE
+######################################################################
+
+# Get NLCD 2016 extract (will expire)
+mkdir tmp/
+cd tmp
+wget -c https://www.mrlc.gov/downloads/sciweb1/shared/mrlc/download-tool/NLCD_avAESMFIdgkNMxXtxKoH.zip
+unzip NLCD_avAESMFIdgkNMxXtxKoH.zip
+
+# As above, pull out geojson of the state border and clip the raster with it
+psql maptember_2020 -t -c "
+  SELECT 
+    ST_AsGeoJSON(
+      ST_Transform(wkb_geometry,4326)
+    ) 
+  FROM vt_border
+" > vt_border.geojson
+
+# convert to wgs84, clip to state bound
+gdalwarp -t_srs "EPSG:4326" NLCD_2016_Tree_Canopy_L48_20190831_avAESMFIdgkNMxXtxKoH.tiff NLCD_2016_Tree_Canopy_4326.tif
+
+# Cut out the state boundary
+gdalwarp -dstnodata 0 -cutline vt_border.geojson NLCD_2016_Tree_Canopy_4326.tif NLCD_2016_Tree_Canopy_clipped.tif
+
+# Send to DB
+raster2pgsql -I -F -s 4326 NLCD_2016_Tree_Canopy_clipped.tif nlcd_2016_tree_canopy_clipped | psql maptember_2020
+
+# And render over the blender-derived shaded relief from day 11!
+
+# Oh, and cleanup. This was a LOT of NLCD data.
+cd ../
+rm -r tmp/
