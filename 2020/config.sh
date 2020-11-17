@@ -781,6 +781,8 @@ gdalwarp -dstnodata 0 -cutline vt_border.geojson NLCD_2016_Tree_Canopy_4326.tif 
 raster2pgsql -I -F -s 4326 NLCD_2016_Tree_Canopy_clipped.tif nlcd_2016_tree_canopy_clipped | psql maptember_2020
 
 # And render over the blender-derived shaded relief from day 11!
+# Shouts to Sarah Bell for the font I'm now using predominantly:
+# https://www.sarahbellmaps.com/typography-for-topography-belltopo-sans-free-font/
 
 # Oh, and cleanup. This was a LOT of NLCD data.
 cd ../
