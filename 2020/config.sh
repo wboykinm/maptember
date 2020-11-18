@@ -787,3 +787,31 @@ raster2pgsql -I -F -s 4326 NLCD_2016_Tree_Canopy_clipped.tif nlcd_2016_tree_cano
 # Oh, and cleanup. This was a LOT of NLCD data.
 cd ../
 rm -r tmp/
+
+######################################################################
+# DAY 19: NULL
+######################################################################
+
+# If you try to navigate to "Vermont" from anywhere using Google maps, you'll be 
+# directed to the side yard of a nondescript house in Morrisville.
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day19;
+  CREATE TABLE day19 AS (
+    SELECT
+      'Nullyard'::text AS name,
+      ST_Transform(
+        ST_GeomFromText('POINT(-72.577846 44.558801)', 4326),
+        32145
+      ) AS the_geom_32145
+  )
+"
+
+# While NULL locations have a long and storied history, they usually
+# have a pretty good [if stupid] explanation: 
+# (https://www.theguardian.com/technology/2016/aug/09/maxmind-mapping-lawsuit-kansas-farm-ip-address) 
+# But despite a local newpaper piece:
+# (https://www.sevendaysvt.com/vermont/wtf-why-does-google-think-vermont-is-in-morristown/Content?oid=3348157)
+# and a stackoverflow post: 
+# https://stackoverflow.com/questions/36991606/how-does-google-maps-represent-an-area-as-a-point
+# . . . the mystery of Vermont's Nullyard has not been satisfactorily explained.
