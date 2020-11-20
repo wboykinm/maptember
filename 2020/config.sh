@@ -815,3 +815,78 @@ psql maptember_2020 -c "
 # and a stackoverflow post: 
 # https://stackoverflow.com/questions/36991606/how-does-google-maps-represent-an-area-as-a-point
 # . . . the mystery of Vermont's Nullyard has not been satisfactorily explained.
+
+
+######################################################################
+# DAY 20: POPULATION
+######################################################################
+
+# When I was growing up in Vermont in the 80s and 90s, I was tought (mostly
+# in school environments) that before Europeans arrived Vermont
+# was a hunting ground occasionally visited by Iroqouis and Algonquin,
+# but certainly not settled. I was tought that Vermont was no one's homeland,
+# so it was "available" to first the French then the English.
+# But the Abenaki did live here, they still live here, and they did not agree 
+# to the erasure. This is an attempt to show where the Abenaki and their
+# compatriots live today around the state.
+
+# Get the enriched census block boundaries for the state
+wget -c https://opendata.arcgis.com/datasets/541094d3d7db43469fb17d40468c6320_19.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_blocks.zip
+unzip vt_blocks.zip
+
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" VT_2010_Census_Block_Boundaries_and_Statistics.shp -nln vt_blocks -nlt MULTIPOLYGON
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day20a;
+  CREATE TABLE day20a AS (
+    SELECT
+      p0030001 AS total_population,
+      p0030004 AS american_indian,
+      ST_Centroid(wkb_geometry) AS the_geom_32145_point,
+      wkb_geometry AS the_geom_32145_poly
+    FROM vt_blocks
+    WHERE p0030004 > 0
+  )
+"
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day20b;
+  CREATE TABLE day20b (
+    band text,
+    the_geom_32145 geometry(Point,32145)
+  );
+  INSERT INTO day20b VALUES
+    (
+      'Missisquoi Band',
+      ST_Transform(
+        ST_GeomFromText('POINT(-73.075 44.953)', 4326),
+        32145
+      )
+    ),
+    (
+      'Nulhegan Band',
+      ST_Transform(
+        ST_GeomFromText('POINT(-72.216 44.915)', 4326),
+        32145
+      )
+    ),
+    (
+      'Elnu Tribe',
+      ST_Transform(
+        ST_GeomFromText('POINT(-73.1993 42.817)', 4326),
+        32145
+      )
+    ),
+    (
+      'Koasek Band',
+      ST_Transform(
+        ST_GeomFromText('POINT(-72.1286 43.991)', 4326),
+        32145
+      )
+    );
+"
+
+# Over 2,000 American Indians live in Vermont today, and while not all of them
+# are Abenaki, there are sizeable contingents in certain regions of the state.
+# These include the Missisquoi and Nulhegan bands, in the Northern part of the state.
+# https://abenakitribe.org/
