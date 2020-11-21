@@ -890,3 +890,34 @@ psql maptember_2020 -c "
 # are Abenaki, there are sizeable contingents in certain regions of the state.
 # These include the Missisquoi and Nulhegan bands, in the Northern part of the state.
 # https://abenakitribe.org/
+
+
+######################################################################
+# DAY 21: WATER
+######################################################################
+
+# Hydrography! EVerybody loves figuring out the inflection spots between watersheds, right?
+# . . . right?
+# Well, anyway, I've always been fascinated by one spot on Route 2 between 
+# Joe's Pond and Molly's Pond in Danville. If you empty a glass of water in one spot,
+# it flows slowly and steadily into Long Island Sound, but a few feet in the other direction
+# and it flows out the Saint Lawrence seaway to the Atlantic. Anyway, let's map that
+# spot, and others.
+
+# Get watershed boundaries from VCGI, then import them:
+wget -c https://opendata.arcgis.com/datasets/cd19be48c4684255bd63e2873ea418e5_163.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_watersheds.zip
+unzip vt_watersheds.zip
+
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" Watershed_Planning_Basins.shp -nln vt_watersheds -nlt MULTIPOLYGON
+
+# Simplify a bit for cartographic ease, then render in QGIS
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day21;
+  CREATE TABLE day21 AS (
+    SELECT
+      -- Strip the numeric designations from the names
+      split_part(boundary,'(',1) AS name,
+      ST_SimplifyVW(wkb_geometry,250) AS the_geom_32145
+    FROM vt_watersheds
+  )
+"
