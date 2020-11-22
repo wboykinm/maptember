@@ -921,3 +921,38 @@ psql maptember_2020 -c "
     FROM vt_watersheds
   )
 "
+
+######################################################################
+# DAY 22: MOVEMENT
+######################################################################
+
+# Roadkill is a fact of life in Vermont. The high speeds of drivers 
+# combined with the abundance of wildlife leads to inevitable collisions,
+# which at times are catalogued by the local agencies of transportation 
+# and natural resources: https://geodata.vermont.gov/datasets/vt-vehicle-animal-collisions-2006
+
+# Let's put this stuff into an animated map of collisions.
+
+# Get and import the data
+wget -c https://opendata.arcgis.com/datasets/adc352f98439478d9081a6a7d563f5b2_10.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_collisions.zip
+unzip vt_collisions.zip
+
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" VT_Vehicle-Animal_Collisions_-_2006.shp -nln vt_collisions -nlt POINT
+
+# Make the layer, parsing the dates and reformatting the animal type
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day22;
+  CREATE TABLE day22 AS (
+    SELECT
+      (CASE WHEN msri_code LIKE 'Deer%' THEN 'Deer' ELSE msri_code END) AS type,
+      date_ AS date,
+      wkb_geometry AS the_geom_32145
+    FROM vt_collisions
+  )
+"
+
+# Use Anita Graser's excellent Time Manager plugin to animate the result:
+# https://www.qgistutorials.com/en/docs/3/animating_time_series.html
+
+# And combine into a gif with imagemagick
+convert -delay 50 img/day22/*.png -loop 0 img/day22.gif
