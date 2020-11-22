@@ -956,3 +956,27 @@ psql maptember_2020 -c "
 
 # And combine into a gif with imagemagick
 convert -delay 50 img/day22/*.png -loop 0 img/day22.gif
+
+######################################################################
+# DAY 23: BOUNDARIES
+######################################################################
+
+# F*** it. Let's do all the boundaries.
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day23;
+  CREATE TABLE day23 AS (
+    SELECT wkb_geometry AS the_geom_32145 FROM vt_border
+    UNION ALL 
+    SELECT wkb_geometry AS the_geom_32145 FROM vt_watersheds
+    UNION ALL
+    SELECT wkb_geometry AS the_geom_32145 FROM vt_towns
+    UNION ALL
+    SELECT wkb_geometry AS the_geom_32145 FROM vt_blocks
+    -- Now we do some fun stuff with the blocks! 
+    -- We DERIVE THINGS *scary grin*
+    UNION ALL
+    SELECT ST_Union(wkb_geometry) AS the_geom_32145 FROM vt_blocks GROUP BY county
+    UNION ALL
+    SELECT ST_Union(wkb_geometry) AS the_geom_32145 FROM vt_blocks GROUP BY county,tract
+  )
+"
