@@ -980,3 +980,30 @@ psql maptember_2020 -c "
     SELECT ST_Union(wkb_geometry) AS the_geom_32145 FROM vt_blocks GROUP BY county,tract
   )
 "
+
+######################################################################
+# DAY 24: ELEVATION
+######################################################################
+
+# Revisiting dayta from many days ago, let's lay some contours on the blender
+# hillshade layer. As much as I'd like to do this in PostGIS, there does not
+# appear to be a snap-your-fingers-magic-type contour function, so in this
+# case we'll use good ol' GDAL:
+
+gdal_contour -a elev data/srtm_30m/srtm_30m_vt_clipped.tif contour_50.shp -i 50.0
+
+# Then put it in the DB
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" contour_50.shp -nln vt_contours_50
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day24;
+  CREATE TABLE day24 AS (
+    SELECT
+      elev AS elevation_m,
+      wkb_geometry AS the_geom_32145
+    FROM vt_contours_50
+  )
+"
+
+# Then apply one of the handy cpt-city topographic color schemes in QGIS:
+# https://gis.stackexchange.com/questions/94978/elevation-color-ramps-for-dems-in-qgis
