@@ -1007,3 +1007,121 @@ psql maptember_2020 -c "
 
 # Then apply one of the handy cpt-city topographic color schemes in QGIS:
 # https://gis.stackexchange.com/questions/94978/elevation-color-ramps-for-dems-in-qgis
+
+######################################################################
+# DAY 25: COVID-19
+######################################################################
+
+# Taking a step back from the somewhat-frightning network map from day 15,
+# We'll grab some time series data at the county level and see if it's possible
+# to perform some geometry magic to make (ugh, I hate that Tufte coined this)
+# _sparklines_ of an infographic style
+
+# Get the latest data
+wget -c https://opendata.arcgis.com/datasets/439e13964dcc44b59c37ab7b481f2ec6_0.csv -O vt_cases.csv
+
+# Pull it into the DB (and we're off to a VERY long race here)
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS vt_cases;
+  CREATE TABLE vt_cases (
+    objectid_1 int,
+    objectid int,
+    date text,
+    map_county text,
+    cntygeoid int,
+    c_new int,
+    c_total int,
+    d_new int,
+    d_total int,
+    t_total int
+  );
+"
+psql maptember_2020 -c "\COPY vt_cases FROM 'vt_cases.csv' CSV HEADER"
+
+# Create a starter dataset with county centroids and correct formatting
+METRIC=c_new
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS vt_covid;
+  CREATE TABLE vt_covid AS (
+    WITH counties AS (
+      SELECT
+        state || county AS id,
+        ST_Centroid(ST_Union(wkb_geometry)) AS the_geom_32145
+      FROM vt_blocks
+      GROUP BY state,county
+    )
+    SELECT
+      c.id,
+      v.map_county,
+      v.date::date AS date,
+      v.c_new,
+      v.c_total,
+      v.d_new,
+      v.d_total,
+      v.t_total,
+      c.the_geom_32145
+    FROM vt_cases v
+    LEFT JOIN counties c ON c.id = v.cntygeoid::text
+    ORDER BY v.date::date
+  )
+"
+
+# Create sparklines
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day25;
+  CREATE TABLE day25 AS (
+    WITH nodes AS (
+      SELECT
+        map_county,
+        date,
+        ST_Translate(
+          -- Move the individual points to the right place
+          ST_Translate(
+            the_geom_32145,
+            -- Move on the X axis by time (number of days)
+            (
+              -- Total span of the time series
+              DATE_PART('day', current_timestamp - '2020-03-07') -
+              -- minus the duration of the given instance
+              DATE_PART('day', current_timestamp - date) 
+              -- multiplied by a spacer
+              * 200
+            ),
+            -- Move on the Y axis by the metric magnitude * 1/2km
+            ${METRIC} * 500
+          ),
+          -- Move each series back to the right position on the X axis
+          DATE_PART('day', current_timestamp - '2020-03-07') / 2 * 200,
+          -- And move the by Y a tiny random to avoid overlap
+          (CASE WHEN map_county IN ('Windsor County','Windham County') THEN - 15000 ELSE 0 END)
+        ) AS the_geom_32145
+      FROM vt_covid
+    )
+    SELECT
+      map_county,
+      -- Smooth the lines a LITTLE bit
+      ST_Simplify(
+        -- String the points together by county, ordered by date
+        ST_MakeLine(
+          array_agg(
+            the_geom_32145 
+            ORDER BY date
+          )
+        ),
+        500
+      ) AS the_geom_32145
+    FROM nodes
+    GROUP BY map_county
+  )
+"
+
+# And make a quick county centroids layer for labeling
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS vt_county_points;
+  CREATE TABLE  vt_county_points AS (
+    SELECT
+      map_county,
+      ST_Centroid(the_geom_32145) AS the_geom_32145
+    FROM day25
+  )
+"
