@@ -1125,3 +1125,17 @@ psql maptember_2020 -c "
     FROM day25
   )
 "
+
+######################################################################
+# DAY 26: NEW TOOL
+######################################################################
+
+# Over the long, isolated summer, Topi Tjukanov put together some amazing
+# SVG polygon styles for use in QGIS. You can get them here:
+# https://github.com/tjukanovt/qgis_styles
+
+git clone https://github.com/tjukanovt/qgis_styles.git
+cd qgis_styles
+cat collections/style_xml/pencilish.xml | pbcopy
+
+# . . . and add to QGIS as indicated in the README!
