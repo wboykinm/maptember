@@ -1139,3 +1139,12 @@ cd qgis_styles
 cat collections/style_xml/pencilish.xml | pbcopy
 
 # . . . and add to QGIS as indicated in the README!
+
+# . . . using town boundaries
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day26;
+  CREATE TABLE day26 AS (
+    SELECT *
+    FROM vt_towns
+  )
+"
