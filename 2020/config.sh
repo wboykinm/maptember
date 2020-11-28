@@ -1148,3 +1148,71 @@ psql maptember_2020 -c "
     FROM vt_towns
   )
 "
+
+######################################################################
+# DAY 27: BIG DATA (OR SMALL)
+######################################################################
+
+# Cheating a bit, I'll move over to Google's BigQuery for today's challenge
+# With its hosted mirror of OpenStreetmap, Bigquery can run SQL against the 
+# Now-greater-than-2TB complete OSM dataset. Here I'm querying for buildings
+# that intersect the Vermont border.
+
+echo "
+WITH buildings AS (
+SELECT 
+  feature_type, 
+  osm_id, 
+  osm_timestamp, 
+  ST_Centroid(geometry) AS centroid, 
+  ST_Y(ST_Centroid(geometry)) AS lat,
+  ST_X(ST_Centroid(geometry)) AS lon,
+  (
+    SELECT 
+      value 
+    FROM UNNEST(all_tags) 
+    WHERE key='name'
+  ) AS name,
+  (
+    SELECT 
+      value 
+    FROM UNNEST(all_tags) 
+    WHERE key='height'
+  ) AS height
+FROM `bigquery-public-data.geo_openstreetmap.planet_features`
+WHERE ('building') IN (
+  SELECT 
+    (key) 
+  FROM UNNEST(all_tags))
+)
+SELECT
+  buildings.lat,
+  buildings.lon
+FROM buildings 
+LEFT JOIN `bigquery-public-data.geo_us_boundaries.states` s
+ON ST_Intersects(buildings.centroid,s.state_geom)
+WHERE s.geo_id = '50'
+" > query_in.sql
+
+# Then run the above on BQ: https://console.cloud.google.com/bigquery?sq=239220656820:3da36746c0ef4a8d9864ad7a2af8eec5
+
+# Export the results and bring into the local postgres DB to map
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day27;
+  CREATE TABLE day27 (
+    lat float,
+    lon float
+  )
+"
+
+psql maptember_2020 -c "\COPY day27 FROM 'vt_osm_buildings.csv' CSV HEADER;
+  SELECT AddGeometryColumn ('public','day27','the_geom_32145',32145,'GEOMETRY',2);
+  UPDATE day27 
+  SET the_geom_32145 = ST_Transform(
+    ST_GeomFromText(
+      'POINT(' || lon || ' ' || lat || ')',
+      4326
+    ),
+    32145
+  );
+"
