@@ -1304,3 +1304,32 @@ psql maptember_2020 -c "
     FROM day28a
   );
 "
+
+######################################################################
+# DAY 29: GLOBE
+######################################################################
+
+# Hurray for orthographic projections! Ben (@BNHRdotXYZ) has an
+# excellent tutorial on how to add these to QGIS
+# https://bnhr.xyz/2018/09/21/create-a-globe-in-QGIS.html
+
+# Get world land!
+wget -c https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_land.zip
+unzip ne_10m_land.zip
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" ne_10m_land.shp -nln ne_10m_land -nlt MULTIPOLYGON
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day29;
+  CREATE TABLE day29 AS (
+    SELECT
+      'Land'::text AS type,
+      ST_Union(wkb_geometry) AS the_geom
+    FROM ne_10m_land
+    GROUP BY 1
+    UNION ALL
+    SELECT
+      'Vermont'::text AS type,
+      ST_Transform(wkb_geometry,4326) AS the_geom
+    FROM vt_border
+  );
+"
