@@ -1216,3 +1216,61 @@ psql maptember_2020 -c "\COPY day27 FROM 'vt_osm_buildings.csv' CSV HEADER;
     32145
   );
 "
+
+######################################################################
+# DAY 28: NON-GEOGRAPHIC MAP
+######################################################################
+
+# An awesome idea from Andrew Hill in years gone by: use pure PostGIS
+# to rearrange a series of geographical features in a non-geographical way.
+
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day28;
+  CREATE TABLE day28 AS (  
+    WITH RECURSIVE 
+        dims AS (
+          SELECT 
+            2*sqrt(sum(ST_Area(the_geom))) as d, 
+            sqrt(sum(ST_Area(the_geom)))/20 as w, 
+            count(*) as rows 
+          FROM vttowns_wgs84 
+          WHERE the_geom IS NOT NULL),   
+        geoms AS (
+          SELECT 
+            the_geom, 
+            cartodb_id, 
+            ST_YMax(the_geom)-ST_YMin(the_geom) as height 
+          FROM vttowns_wgs84 
+          WHERE the_geom IS NOT NULL 
+          ORDER BY ST_YMax(the_geom)-ST_YMin(the_geom)  DESC
+        ),  
+        geomval AS (
+          SELECT 
+            the_geom, 
+            cartodb_id, 
+            row_number() OVER (ORDER BY height DESC) as id 
+          FROM geoms
+        ),  
+        positions(cartodb_id, the_geom,x_offset,y_offset,new_row,row_offset) AS (     
+          (SELECT cartodb_id, the_geom, 0.0::float, 0.0::float, FALSE, 2 from geomval limit 1)    
+          UNION ALL       
+          (SELECT 
+            (SELECT cartodb_id FROM geomval WHERE id = p.row_offset),
+            (SELECT the_geom FROM geomval WHERE id = p.row_offset),
+            CASE WHEN p.x_offset < s.d THEN (SELECT (s.w+(ST_XMax(the_geom) - ST_XMin(the_geom)))+p.x_offset FROM geomval WHERE id = p.row_offset) ELSE 0 END as x_offset,
+            CASE WHEN p.x_offset < s.d THEN p.y_offset ELSE (SELECT (s.w+(ST_YMax(the_geom) - ST_YMin(the_geom)))+p.y_offset FROM geomval WHERE id = p.row_offset) END as y_offset , FALSE, p.row_offset+1 
+          FROM positions p, dims s 
+          WHERE p.row_offset < s.rows ) ),  
+        sfact AS (    
+          SELECT 
+            ST_XMin(the_geom) as x, 
+            ST_YMax(the_geom) as y 
+          FROM geomval LIMIT 1  
+        ) 
+    SELECT 
+        ST_Transform(ST_Translate( the_geom, (x - ST_XMin(the_geom) - x_offset), (y - ST_YMin(the_geom) - y_offset)),3857) as the_geom_webmercator, 
+        cartodb_id 
+    FROM positions,sfact 
+    ORDER BY row_offset ASC
+  )
+"
