@@ -1224,53 +1224,83 @@ psql maptember_2020 -c "\COPY day27 FROM 'vt_osm_buildings.csv' CSV HEADER;
 # An awesome idea from Andrew Hill in years gone by: use pure PostGIS
 # to rearrange a series of geographical features in a non-geographical way.
 
+# To get some stats, let's grab the county subdivision layer from VCGI.
+# This layer can be a basket case elsewhere in the country, but in VT
+# the units neatly conform to city and town boundaries
+wget -c https://opendata.arcgis.com/datasets/01539ba1dec8418b867ec580424405aa_12.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_cousub.zip
+unzip vt_cousub.zip 
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" VT_2010_Census_County_Subdivision_Boundaries_and_Statistics.shp -nln vt_cousub -nlt MULTIPOLYGON
+
+
+# Work some true PostGIS wizardry
 psql maptember_2020 -c "
-  DROP TABLE IF EXISTS day28;
-  CREATE TABLE day28 AS (  
+  DROP TABLE IF EXISTS day28a;
+  CREATE TABLE day28a AS (  
     WITH RECURSIVE 
-        dims AS (
-          SELECT 
-            2*sqrt(sum(ST_Area(the_geom))) as d, 
-            sqrt(sum(ST_Area(the_geom)))/20 as w, 
-            count(*) as rows 
-          FROM vttowns_wgs84 
-          WHERE the_geom IS NOT NULL),   
-        geoms AS (
-          SELECT 
-            the_geom, 
-            cartodb_id, 
-            ST_YMax(the_geom)-ST_YMin(the_geom) as height 
-          FROM vttowns_wgs84 
-          WHERE the_geom IS NOT NULL 
-          ORDER BY ST_YMax(the_geom)-ST_YMin(the_geom)  DESC
-        ),  
-        geomval AS (
-          SELECT 
-            the_geom, 
-            cartodb_id, 
-            row_number() OVER (ORDER BY height DESC) as id 
-          FROM geoms
-        ),  
-        positions(cartodb_id, the_geom,x_offset,y_offset,new_row,row_offset) AS (     
-          (SELECT cartodb_id, the_geom, 0.0::float, 0.0::float, FALSE, 2 from geomval limit 1)    
-          UNION ALL       
-          (SELECT 
-            (SELECT cartodb_id FROM geomval WHERE id = p.row_offset),
-            (SELECT the_geom FROM geomval WHERE id = p.row_offset),
-            CASE WHEN p.x_offset < s.d THEN (SELECT (s.w+(ST_XMax(the_geom) - ST_XMin(the_geom)))+p.x_offset FROM geomval WHERE id = p.row_offset) ELSE 0 END as x_offset,
-            CASE WHEN p.x_offset < s.d THEN p.y_offset ELSE (SELECT (s.w+(ST_YMax(the_geom) - ST_YMin(the_geom)))+p.y_offset FROM geomval WHERE id = p.row_offset) END as y_offset , FALSE, p.row_offset+1 
-          FROM positions p, dims s 
-          WHERE p.row_offset < s.rows ) ),  
-        sfact AS (    
-          SELECT 
-            ST_XMin(the_geom) as x, 
-            ST_YMax(the_geom) as y 
-          FROM geomval LIMIT 1  
-        ) 
-    SELECT 
-        ST_Transform(ST_Translate( the_geom, (x - ST_XMin(the_geom) - x_offset), (y - ST_YMin(the_geom) - y_offset)),3857) as the_geom_webmercator, 
-        cartodb_id 
-    FROM positions,sfact 
-    ORDER BY row_offset ASC
-  )
+      dims AS (
+        SELECT 
+          sqrt(sum(ST_Area(wkb_geometry))) * 1.5 as d, 
+          sqrt(sum(ST_Area(wkb_geometry))) / 20 as w, 
+          count(*) as rows 
+        FROM vt_cousub 
+        WHERE wkb_geometry IS NOT NULL),   
+      geoms AS (
+        SELECT 
+          wkb_geometry AS the_geom_32145, 
+          geoid10, 
+          ST_YMax(wkb_geometry)-ST_YMin(wkb_geometry) as height 
+        FROM vt_cousub 
+        WHERE wkb_geometry IS NOT NULL 
+        ORDER BY ST_YMax(wkb_geometry)-ST_YMin(wkb_geometry)  DESC
+      ),  
+      geomval AS (
+        SELECT 
+          the_geom_32145, 
+          geoid10, 
+          row_number() OVER (ORDER BY height DESC) as id 
+        FROM geoms
+      ),  
+      positions(geoid10, the_geom_32145,x_offset,y_offset,new_row,row_offset) AS (     
+        (SELECT geoid10, the_geom_32145, 0.0::float, 0.0::float, FALSE, 2 from geomval limit 1)    
+        UNION ALL       
+        (SELECT 
+          (SELECT geoid10 FROM geomval WHERE id = p.row_offset),
+          (SELECT the_geom_32145 FROM geomval WHERE id = p.row_offset),
+          CASE WHEN p.x_offset < s.d THEN (SELECT (s.w+(ST_XMax(the_geom_32145) - ST_XMin(the_geom_32145)))+p.x_offset FROM geomval WHERE id = p.row_offset) ELSE 0 END as x_offset,
+          CASE WHEN p.x_offset < s.d THEN p.y_offset ELSE (SELECT (s.w+(ST_YMax(the_geom_32145) - ST_YMin(the_geom_32145)))+p.y_offset FROM geomval WHERE id = p.row_offset) END as y_offset , FALSE, p.row_offset+1 
+        FROM positions p, dims s 
+        WHERE p.row_offset < s.rows ) 
+      ),  
+      sfact AS (    
+        SELECT 
+          ST_XMin(the_geom_32145) as x, 
+          ST_YMax(the_geom_32145) as y 
+        FROM geomval LIMIT 1  
+      ),
+      arrangement AS (
+        SELECT 
+          ST_Translate( the_geom_32145, ((x * 1.25) - ST_XMin(the_geom_32145) - (x_offset * 0.75)), (y - ST_YMin(the_geom_32145) - y_offset)) as the_geom_32145, 
+          geoid10
+        FROM positions,sfact 
+        ORDER BY row_offset ASC
+      ) 
+      SELECT
+        arrangement.the_geom_32145,
+        arrangement.geoid10,
+        vt_cousub.name10 AS name,
+        vt_cousub.p0030001 AS pop_2010
+      FROM arrangement
+      LEFT JOIN vt_cousub ON vt_cousub.geoid10 = arrangement.geoid10
+  );
+"
+
+# . . . and add a centroid layer for visualizing
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day28b;
+  CREATE TABLE day28b AS (
+    SELECT
+      *,
+      ST_Centroid(the_geom_32145) AS the_geom_centroid_32145
+    FROM day28a
+  );
 "
