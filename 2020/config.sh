@@ -1333,3 +1333,49 @@ psql maptember_2020 -c "
     FROM vt_border
   );
 "
+
+######################################################################
+# DAY 29: MAP
+######################################################################
+
+# Nineteen years ago I started hiking the Long Trail, along the spine
+# of the Green Mountains from Quebec to Massachusetts. I finished this
+# October. Here I break up the segments of the journey by year.
+
+# Get trail data from VCGI:
+wget -c https://opendata.arcgis.com/datasets/df69f82eb91e492d89223ae50d2f89b5_21.zip?outSR=%7B%22latestWkid%22%3A32145%2C%22wkid%22%3A32145%7D -O vt_trails.zip
+unzip vt_trails.zip
+ogr2ogr -where "trailname like 'Long Trail%'" -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" VT_Data_-_E911_Trails.shp -nln vt_long_trail 
+
+# Get my trip log data from github
+wget -c https://gist.githubusercontent.com/wboykinm/5562553d0494af27e20ac68a6a4226ff/raw/5cf0235c6a137943adf3b6ea3dc7a879a022f28f/map.geojson -O bill_lt.geojson
+ogr2ogr -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" bill_lt.geojson -nln bill_lt 
+
+# Do some crazy stuff to prep the trail into segments by year
+psql maptember_2020 -c "
+  DROP TABLE IF EXISTS day30a;
+  DROP TABLE IF EXISTS day30b;
+  CREATE TABLE day30a AS (
+    SELECT
+      'Long trail'::text AS seg_name,
+      ST_Union(wkb_geometry) AS the_geom_32145
+    FROM vt_long_trail
+    GROUP BY 1
+  );
+  CREATE TABLE day30b AS (
+    SELECT 
+      -- Snap these to the closest spot on the line
+      year_start,
+      year_end,
+      ST_ClosestPoint(
+        (SELECT the_geom_32145 FROM day30a),
+        wkb_geometry
+      ) AS the_geom_32145
+    FROM bill_lt
+  );
+"
+
+######################################################################
+# FIN. THANKS FOR FOLLOWING!
+######################################################################
+    
