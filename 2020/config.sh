@@ -1335,7 +1335,7 @@ psql maptember_2020 -c "
 "
 
 ######################################################################
-# DAY 29: MAP
+# DAY 30: A MAP
 ######################################################################
 
 # Nineteen years ago I started hiking the Long Trail, along the spine
