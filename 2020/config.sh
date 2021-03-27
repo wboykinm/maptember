@@ -485,10 +485,12 @@ psql maptember_2020 -c "
 # https://somethingaboutmaps.wordpress.com/2017/11/16/creating-shaded-relief-in-blender/
 
 # Set VT SRTM tiles, then grab and unzip them (only works with auth, unfortunately)
-VT_SRTM=( 'N44W074' 'N44W073' 'N44W072' 'N43W073' 'N43W074' 'N42W073' 'N42W074' )
+VT_SRTM=( 'N45W074' 'N45W073' 'N45W072' 'N44W074' 'N44W073' 'N44W072' 'N43W073' 'N43W074' 'N42W073' 'N42W074' )
 for t in "${VT_SRTM[@]}"; do
-  wget -c http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/${t}.SRTMGL1.hgt.zip -O ${t}.zip
-  unzip ${t}.zip
+  # for manual download (eyeroll)
+  echo "http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/${t}.SRTMGL1.hgt.zip"
+  # wget -c http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/2000.02.11/${t}.SRTMGL1.hgt.zip -O ${t}.zip
+  # unzip ${t}.zip
 done
 
 # Combine the SRTM tiles and convert to .tif
@@ -506,14 +508,18 @@ gdalwarp -t_srs "EPSG:32145" -ot UInt16 -cutline vt_border.geojson data/srtm_30m
 gdal_translate -scale 0 1201 0 65535 data/srtm_30m/srtm_30m_vt_clipped.tif data/srtm_30m/srtm_30m_vt_scaled.tif
 
 # Head on over to blender and follow the instructions at the link above. Mayhem ensues!
-# With output in hand . . .
+# Specificaly, rendering the 3d version of this DEM to a full-size .png in blender will
+# crash your machine! Render it to 50% scale instead, and then . . .
+
+# Embiggen to the original dimensions
+convert data/srtm_30m/srtm_30m_vt_relief_half.tif -adaptive-resize 8854x15871 data/srtm_30m/srtm_30m_vt_relief.tif
 
 # Get the worldfile from the original
 gdal_translate -co "TFW=YES" data/srtm_30m/srtm_30m_vt_scaled.tif data/srtm_30m/srtm_30m_vt_tfw.tif
 
 # Apply it to the blender output (and cross fingers)
-cp data/srtm_30m/srtm_30m_vt_tfw.tfw data/srtm_30m/vt_srtm30m_relief.tfw
-gdal_translate -a_srs "EPSG:32145" -of GTiff data/srtm_30m/vt_srtm30m_relief.tif data/srtm_30m/vt_srtm30m_relief_geo.tif
+cp data/srtm_30m/srtm_30m_vt_tfw.tfw data/srtm_30m/srtm_30m_vt_relief.tfw
+gdal_translate -a_srs "EPSG:32145" -of GTiff data/srtm_30m/srtm_30m_vt_relief.tif data/srtm_30m/srtm_30m_vt_relief_geo.tif
 
 ######################################################################
 # DAY 12: MAP NOT MADE WITH GIS SOFTWARE
