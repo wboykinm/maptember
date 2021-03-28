@@ -12,6 +12,11 @@ psql maptember_2020 -c 'CREATE EXTENSION IF NOT EXISTS postgis;CREATE EXTENSION 
 # Move the data to the new DB (to VT state-plane, because *sigh*)
 ogr2ogr -where "name_en like 'Vermont%'" -t_srs "EPSG:32145" -f "PostgreSQL" PG:"host=localhost dbname=maptember_2020" ne_10m_admin_1_states_provinces.shp -nln vt_border
 
+# As will be my custom, maps will be rendered w/ QGIS, using the excellent 
+# [PostGIS connector](https://docs.qgis.org/3.16/en/docs/training_manual/databases/db_manager.html#basic-fa-managing-postgis-databases-with-db-manager) 
+# to keep a fresh connection with the data I'm crunching,  and to abstract
+# away the basemap-building. The QGIS project file is [here](projects/maptember_2020.qgz)
+
 ######################################################################
 # DAY 1: POINTS
 ######################################################################
@@ -1044,8 +1049,10 @@ psql maptember_2020 -c "
 "
 psql maptember_2020 -c "\COPY vt_cases FROM 'vt_cases.csv' CSV HEADER"
 
-# Create a starter dataset with county centroids and correct formatting
+# Parameterize the desired metric (new cases)
 METRIC=c_new
+
+# Create a starter dataset with county centroids and correct formatting
 psql maptember_2020 -c "
   DROP TABLE IF EXISTS vt_covid;
   CREATE TABLE vt_covid AS (
