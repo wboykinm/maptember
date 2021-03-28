@@ -46,7 +46,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_1.png" width="250px"/>
+<img src="img/day_1.png" width="400px"/>
 <hr>
 
 ## DAY 2: LINES
@@ -90,7 +90,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_2.png" width="250px"/>
+<img src="img/day_2.png" width="400px"/>
 <hr>
 
 ## DAY 3: POLYGONS
@@ -154,7 +154,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_3.png" width="250px"/>
+<img src="img/day_3.png" width="400px"/>
 <hr>
 
 ## DAY 4: HEXAGONS
@@ -243,7 +243,7 @@ psql maptember_2020 -c "
   )
 "
 ```
-<img src="img/day_4.png" width="250px"/>
+<img src="img/day_4.png" width="400px"/>
 <hr>
 
 ## DAY 5: BLUE
@@ -260,7 +260,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_5.png" width="250px"/>
+<img src="img/day_5.png" width="400px"/>
 <hr>
 
 ## DAY 6: RED
@@ -353,7 +353,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_6.png" width="250px"/>
+<img src="img/day_6.png" width="400px"/>
 <hr>
 
 ## DAY 7: GREEN
@@ -371,7 +371,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_7.png" width="250px"/>
+<img src="img/day_7.png" width="400px"/>
 <hr>
 
 ## DAY 8: YELLOW
@@ -389,7 +389,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_8.png" width="250px"/>
+<img src="img/day_8.png" width="400px"/>
 <hr>
 
 ## DAY 9: MONOCHROME
@@ -420,7 +420,7 @@ psql maptember_2020 -c "
 # Financial Times' background color (which I LOVE):
 # ['#000000','#552700','#aa4e00','#ff7500','#fea355','#ffd1a9','#ffffff]
 ```
-<img src="img/day_9.png" width="250px"/>
+<img src="img/day_9.png" width="400px"/>
 <hr>
 
 ## DAY 10: GRID
@@ -493,7 +493,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_10.png" width="250px"/>
+<img src="img/day_10.png" width="400px"/>
 <hr>
 
 ## DAY 11: 3D
@@ -538,7 +538,7 @@ cp data/srtm_30m/srtm_30m_vt_tfw.tfw data/srtm_30m/srtm_30m_vt_relief.tfw
 gdal_translate -a_srs "EPSG:32145" -of GTiff data/srtm_30m/srtm_30m_vt_relief.tif data/srtm_30m/srtm_30m_vt_relief_geo.tif
 ```
 
-<img src="img/day_11c.png" width="250px"/>
+<img src="img/day_11c.png" width="400px"/>
 <hr>
 
 ## DAY 12: MAP NOT MADE WITH GIS SOFTWARE
@@ -561,7 +561,7 @@ Literally tape a sheet of printer paper to the screen, crank up the brightness, 
 
 _NO GIS-ES WERE INJURED IN THE MAKING OF THIS MAP._
 
-<img src="img/day_12.png" width="250px"/>
+<img src="img/day_12.png" width="400px"/>
 <hr>
 
 ## DAY 13: RASTER
@@ -574,7 +574,7 @@ raster2pgsql -I -F -s 32145 -t 500x800 data/srtm_30m/srtm_30m_vt_clipped.tif srt
 
 And . . . that's it! Render in QGIS over Mapbox Satellite tiles with "overlay" blending set, and it neatly combines the two. But more importantly, YOU'VE LOADED A RASTER DATASET INTO POSTGIS. Celebrate accordingly.
 
-<img src="img/day_13.png" width="250px"/>
+<img src="img/day_13.png" width="400px"/>
 <hr>
 
 ## DAY 14: CLIMATE CHANGE
@@ -600,7 +600,7 @@ psql maptember_2020 -c "
 ```
 Using SQL on raster is a liiiiiiiitle tough to wrap my head around, but the implementation is simple enough for this sort of thing.
 
-<img src="img/day_14.png" width="250px"/>
+<img src="img/day_14.png" width="400px"/>
 <hr>
 
 ## DAY 15: CONNECTIONS
@@ -694,7 +694,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_15.png" width="250px"/>
+<img src="img/day_15.png" width="400px"/>
 <hr>
 
 ## DAY 16: ISLAND(S)
@@ -746,7 +746,7 @@ psql maptember_2020 -c "
 
 This is an elevation processing experiment. For ACTUAL Champlain sea extents, see [Van Hoesen et al., 2020](https://geodata.vermont.gov/datasets/VTANR::glacial-lakes-and-the-champlain-sea).
 
-<img src="img/day_16.png" width="250px"/>
+<img src="img/day_16.png" width="400px"/>
 <hr>
 
 ## DAY 17: HISTORICAL
@@ -761,7 +761,7 @@ Really only the barest minimum of georeferencing is possible given the fact that
 
 Use built-in XYZ endpoint in QGIS: https://mapwarper.net/maps/tile/51751/{z}/{x}/{y}.png
 
-<img src="img/day_17.png" width="250px"/>
+<img src="img/day_17.png" width="400px"/>
 <hr>
 
 ## DAY 18: LAND USE
@@ -800,7 +800,7 @@ cd ../
 rm -r tmp/
 ```
 
-<img src="img/day_18.png" width="250px"/>
+<img src="img/day_18.png" width="400px"/>
 <hr>
 
 ## DAY 19: NULL
@@ -823,7 +823,7 @@ psql maptember_2020 -c "
 While NULL locations have a long and storied history, they usually have [a pretty good - if stupid - explanation](https://www.theguardian.com/technology/2016/aug/09/maxmind-mapping-lawsuit-kansas-farm-ip-address). But despite [a local newpaper piece](https://www.sevendaysvt.com/vermont/wtf-why-does-google-think-vermont-is-in-morristown/Content?oid=3348157), and [a stackoverflow post](https://stackoverflow.com/questions/36991606/how-does-google-maps-represent-an-area-as-a-point), the mystery of Vermont's Nullyard has not been satisfactorily explained.
 
 
-<img src="img/day_19.png" width="250px"/>
+<img src="img/day_19.png" width="400px"/>
 <hr>
 
 ## DAY 20: POPULATION
@@ -893,7 +893,7 @@ Over 2,000 American Indians live in Vermont today, and while not all of them are
 https://abenakitribe.org/
 
 
-<img src="img/day_20.png" width="250px"/>
+<img src="img/day_20.png" width="400px"/>
 <hr>
 
 ## DAY 21: HYDROGRAPHY
@@ -919,7 +919,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_21.png" width="250px"/>
+<img src="img/day_21.png" width="400px"/>
 <hr>
 
 ## DAY 22: MOVEMENT
@@ -980,7 +980,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_23.png" width="250px"/>
+<img src="img/day_23.png" width="400px"/>
 <hr>
 
 ## DAY 24: ELEVATION
@@ -1005,7 +1005,7 @@ psql maptember_2020 -c "
 ```
 Then apply [one of the handy cpt-city topographic color schemes in QGIS](https://gis.stackexchange.com/questions/94978/elevation-color-ramps-for-dems-in-qgis).
 
-<img src="img/day_24.png" width="250px"/>
+<img src="img/day_24.png" width="400px"/>
 <hr>
 
 ## DAY 25: COVID-19
@@ -1126,7 +1126,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_25.png" width="250px"/>
+<img src="img/day_25.png" width="400px"/>
 <hr>
 
 ## DAY 26: NEW TOOL
@@ -1149,7 +1149,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_26.png" width="250px"/>
+<img src="img/day_26.png" width="400px"/>
 <hr>
 
 ## DAY 27: BIG DATA (OR SMALL)
@@ -1216,7 +1216,7 @@ psql maptember_2020 -c "\COPY day27 FROM 'vt_osm_buildings.csv' CSV HEADER;
 "
 ```
 
-<img src="img/day_27.png" width="250px"/>
+<img src="img/day_27.png" width="400px"/>
 <hr>
 
 ## DAY 28: NON-GEOGRAPHIC MAP
@@ -1305,7 +1305,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_28.png" width="250px"/>
+<img src="img/day_28.png" width="400px"/>
 <hr>
 
 ## DAY 29: GLOBE
@@ -1335,7 +1335,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_29.png" width="250px"/>
+<img src="img/day_29.png" width="400px"/>
 <hr>
 
 ## DAY 30: A MAP
@@ -1376,7 +1376,7 @@ psql maptember_2020 -c "
 "
 ```
 
-<img src="img/day_30.png" width="250px"/>
+<img src="img/day_30.png" width="400px"/>
 <hr>
 
 __FIN. THANKS FOR FOLLOWING!__
