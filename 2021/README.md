@@ -43,7 +43,24 @@ ogr2ogr -t_srs "EPSG:4326" \
 ![day_1](img/day_1.png)
 
 ## Day 2: Lines
+The obvious followup to the transit stops is to show the lines themselves!
 
+To PostGIS:
+```sh
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" stm_lignes_sig.shp -overwrite -nln stm_lignes_sig -progress
+```
+To GeoJSON:
+```sh
+ogr2ogr -t_srs "EPSG:4326" \
+  -f "GeoJSON" stm_lignes_sig.geojson \
+  PG:"dbname=maptember_2021" \
+  -sql "SELECT route_name,wkb_geometry FROM stm_lignes_sig" \
+  -lco RFC7946=YES
+```
+
+. . . and [back to Mapbox Studio](https://api.mapbox.com/styles/v1/landplanner/ckvih7nfm0wk014lc4cyw0ecd.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#14.36/45.50529/-73.59485/318/65).
+
+![day_2](img/day_2.png)
 
 ## Day 3: Polygons
 
