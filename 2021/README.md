@@ -38,6 +38,8 @@ ogr2ogr -t_srs "EPSG:4326" \
   -lco RFC7946=YES
 ```
 
+![day_1](img/day_1.png)
+
 ## Day 2: Lines
 
 
