@@ -38,6 +38,8 @@ ogr2ogr -t_srs "EPSG:4326" \
   -lco RFC7946=YES
 ```
 
+. . . where we [style it](https://api.mapbox.com/styles/v1/landplanner/ckvheg58913ya14nb1tns21d7.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#14.36/45.50529/-73.59485/318/65).
+
 ![day_1](img/day_1.png)
 
 ## Day 2: Lines
