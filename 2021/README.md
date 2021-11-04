@@ -127,5 +127,90 @@ In [Mapbox Studio](https://api.mapbox.com/styles/v1/landplanner/ckvk65dv1137q14o
 
 
 ## Day 4: Hexagons
+Hearkening back to last year's entry, I'll again use an excellent PostGIS hexbin function from the good folks at [Carto](https://github.com/CartoDB/cartodb-postgresql/blob/362af5e6a0792ce65e8a842cdc1c0dd36d6da6ad/scripts-available/CDB_Hexagon.sql):
+
+`psql maptember_2021 -f ../../2020/lib/cdb_functions.sql`
+
+. . . and then it's high time we created a containing geometry for the Isle de Montréal. This is for cartographic pleasantries, not administrative precision.
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS montreal_bound;
+  CREATE TABLE montreal_bound AS (
+    SELECT
+      ST_Multi(
+        ST_Union(
+          ST_Buffer(the_geom, 0.001)
+        )
+      ) AS the_geom
+    FROM limitespdq
+  );
+"
+```
+
+. . . and from [Statistics Canada](https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2016-eng.cfm), the metro boundary:
+
+```sh
+wget -c https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/files-fichiers/2016/lcma000b16a_e.zip
+unzip lcma000b16a_e.zip
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" lcma000b16a_e.shp -overwrite -nln montreal_metro -nlt PROMOTE_TO_MULTI -lco GEOMETRY_NAME=the_geom -sql "SELECT * FROM lcma000b16a_e WHERE CMAUID = '462'" -progress
+```
+
+. . . and food businesses from Donnés Québec
+
+```sh
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" businesses.geojson -overwrite -nln businesses -lco GEOMETRY_NAME=the_geom -progress
+```
+
+Let's set up some hexagons!
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS day_4;
+  CREATE TABLE day_4 AS (
+    -- add a grid over the bbox of the city
+    WITH grid AS (
+      SELECT
+        CDB_HexagonGrid(ST_Transform(the_geom,32188),250) AS the_geom_32188
+      FROM montreal_bound
+    )
+    -- Intersect w/ businesses
+    SELECT
+      g.the_geom_32188,
+      count(b.ogc_fid) AS count
+    FROM grid g
+    JOIN businesses b ON ST_Intersects(g.the_geom_32188,ST_Transform(b.the_geom,32188))
+    GROUP BY g.the_geom_32188
+  );
+"
+```
+
+And it's about time we automated the Mapbox end of things. Let's use the [MTS API](https://docs.mapbox.com/help/tutorials/get-started-mts-and-tilesets-cli/).
+
+```sh
+# Export to geojsonl
+ogr2ogr -t_srs "EPSG:4326" \
+  -f "GeoJSONSeq" day_4.geojson.ld \
+  PG:"dbname=maptember_2021" \
+  -sql "SELECT * FROM day_4"
+
+# configure and publish
+tilesets upload-source landplanner day-4-source day_4.geojson.ld
+
+echo '{
+  "version": 1,
+  "layers": {
+    "day_4": {
+      "source": "mapbox://tileset-source/landplanner/day-4-source",
+      "minzoom": 0,
+      "maxzoom": 13
+    }
+  }
+}' > day_4_recipe.json
+
+tilesets create landplanner.day-4-tiles --recipe day_4_recipe.json --name "day_4"
+tilesets publish landplanner.day-4-tiles
+```
+
+And added to [the day's style](https://api.mapbox.com/styles/v1/landplanner/ckvl275cw3f4714lc6vneasnw.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3).
+
+![day_3](img/day_3.png)
 
 ## Day 5: Data challenge 1 - OSM

@@ -115,3 +115,4 @@ dist
 *.tif
 *.tfw
 *.hgt
+*.env
