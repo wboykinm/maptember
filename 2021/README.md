@@ -211,6 +211,105 @@ tilesets publish landplanner.day-4-tiles
 
 And added to [the day's style](https://api.mapbox.com/styles/v1/landplanner/ckvl275cw3f4714lc6vneasnw.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3).
 
-![day_3](img/day_3.png)
+![day_4](img/day_4.png)
 
 ## Day 5: Data challenge 1 - OSM
+
+Hitting the OSM API is always entertaining, so let's try narrow in and collect all roadlines within the bbox of Montreal, with the help of [osm2pgsql](https://osm2pgsql.org/examples/buildings/).
+
+First, get the Geofabrik download for quebec
+```sh
+wget -c "https://download.geofabrik.de/north-america/canada/quebec-latest.osm.pbf"
+```
+
+Then the boundary of Montreal from OSM
+```sh
+wget -c -O montreal.osm "https://www.openstreetmap.org/api/0.6/relation/1571328/full"
+```
+
+Extract the city with [osmium](https://osmcode.org/osmium-tool/)
+```sh
+brew install osmium-tool
+osmium extract -p montreal.osm -o montreal.osm.pbf quebec-latest.osm.pbf
+```
+
+Bring it into the DB
+```sh
+brew install osm2pgsql
+osm2pgsql -d maptember_2021 montreal.osm.pbf
+```
+
+That is WAY faster than expected :) It creates a `planet_osm_line` layer that we'll use below. Now let's make circular punchouts for the hell of it.
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS day_5;
+  CREATE TABLE day_5 AS (
+    -- Set random points around montreal
+    WITH randos AS (
+      SELECT
+        gen_random_uuid() AS id,
+        (ST_Dump(ST_GeneratePoints(ST_Transform(the_geom,32188),5))).geom AS the_geom_32188
+      FROM montreal_bound
+    ),
+    -- set a radius 40% of the distance to the next nearest point (https://gis.stackexchange.com/questions/39210/nearest-neighbor-within-table-using-postgis)
+    radii AS (
+      SELECT
+        i.id,
+        b_id,
+        the_geom_32188,
+        ST_Distance(i.the_geom_32188, i.b_the_geom_32188) AS dist
+      FROM(
+        SELECT
+          a.id,
+          b.id AS b_id,
+          a.the_geom_32188,
+          b.the_geom_32188 AS b_the_geom_32188,
+          rank() OVER (PARTITION BY a.id ORDER BY ST_Distance(a.the_geom_32188, b.the_geom_32188)) AS pos
+        FROM randos a, randos b
+        WHERE a.id <> b.id
+      ) i
+      WHERE pos = 1
+    ),
+    -- make the punchouts
+    windows AS (
+      SELECT
+        ST_Buffer(the_geom_32188, (dist * 0.4)) AS the_geom_32188
+      FROM radii
+    )
+    -- clip the OSM roads data
+    SELECT
+      ST_Intersection(w.the_geom_32188,ST_Transform(l.way,32188)) AS the_geom_32188
+    FROM planet_osm_line l
+    JOIN windows w ON ST_Intersects(w.the_geom_32188,ST_Transform(l.way,32188))
+  );
+"
+```
+
+```sh
+# Export to geojsonl
+ogr2ogr -t_srs "EPSG:4326" \
+  -f "GeoJSONSeq" day_5.geojson.ld \
+  PG:"dbname=maptember_2021" \
+  -sql "SELECT * FROM day_5"
+
+# configure and publish
+tilesets upload-source landplanner day-5-source day_5.geojson.ld
+
+echo '{
+  "version": 1,
+  "layers": {
+    "day_5": {
+      "source": "mapbox://tileset-source/landplanner/day-5-source",
+      "minzoom": 0,
+      "maxzoom": 16
+    }
+  }
+}' > day_5_recipe.json
+
+tilesets create landplanner.day-5-tiles --recipe day_5_recipe.json --name "day_5"
+tilesets publish landplanner.day-5-tiles
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckvlmoupf8qfo14laqi5vbz3g.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3)!
+
+![day_5](img/day_5.png)
