@@ -313,3 +313,28 @@ tilesets publish landplanner.day-5-tiles
 [New style](https://api.mapbox.com/styles/v1/landplanner/ckvlmoupf8qfo14laqi5vbz3g.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3)!
 
 ![day_5](img/day_5.png)
+
+## Day 6: Red
+
+Keeping it entirely in Mapbox studio today, [leveraging the `raster-hue-rotate` property](https://api.mapbox.com/styles/v1/landplanner/ckvmhyhzr628b14nby8qramuz.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3) on the imagery layer.
+
+![day_6](img/day_6.png)
+
+
+## Day 7: Green
+
+## Day 8: Blue
+
+## Day 9: Monochrome
+
+## Day 10: Raster
+
+## Day 11: 3D
+
+## Day 12: Population
+
+## Day 13: Data challenge 2: Natural Earth
+
+## Day 14: Map with a new tool
+
+## Day 15: Map without a computer
