@@ -334,6 +334,17 @@ Keeping it entirely in Mapbox studio today, [leveraging the `raster-hue-rotate` 
 
 ## Day 9: Monochrome
 
+Mapbox Studio [is already tricked out with an excellent monochrome style generator](https://api.mapbox.com/styles/v1/landplanner/ckvperdbs0kt114muiizf8acb.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3), so I'm not going to get fancy [like I did last year](https://github.com/wboykinm/maptember/tree/main/2020#day-9-monochrome). However, I _am_ going to abuse the Pop Art motif.
+
+After exporting with the [Studio print function](https://blog.mapbox.com/high-resolution-printing-arrives-in-mapbox-studio-cc0fafdba898), I'll mosaic with [imagemagick](https://legacy.imagemagick.org/Usage/montage/#montage):
+
+```sh
+montage img/day_9a.png img/day_9b.png img/day_9c.png img/day_9d.png \
+  -geometry +2+2 img/day_9.png
+```
+
+![day_9](img/day_9.png)
+
 ## Day 10: Raster
 
 ## Day 11: 3D
