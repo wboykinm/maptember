@@ -320,10 +320,15 @@ Keeping it entirely in Mapbox studio today, [leveraging the `raster-hue-rotate` 
 
 ![day_6](img/day_6.png)
 
-
 ## Day 7: Green
 
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckvmiogdr0pvb14mt7ll64dmq.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3)
+
+![day_7](img/day_7.png)
+
 ## Day 8: Blue
+
+![day_8](img/day_8.png)
 
 ## Day 9: Monochrome
 
