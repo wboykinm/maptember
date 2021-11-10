@@ -347,6 +347,81 @@ montage img/day_9a.png img/day_9b.png img/day_9c.png img/day_9d.png \
 
 ## Day 10: Raster
 
+_Oh yay it's my day job :)_
+
+Let's use some [Sentinel 2](https://sentinel.esa.int/web/sentinel/missions/sentinel-2) imagery for this one, and some raster tools [detailed in this Mapbox tutorial](https://docs.mapbox.com/help/tutorials/processing-satellite-imagery/). The images are accessible from Sentinel Hub, or from [USGS Earth Explorer](https://earthexplorer.usgs.gov/), and they're pretty dang timely, too. Acquired on day 6 of this challenge! Two scenes cover the Montreal area:
+
+- `L1C_T18TWR_A024390_20211106T155550`
+- `L1C_T18TXR_A024390_20211106T155550`
+
+Grab and unzip:
+
+```sh
+unzip L1C_T18TWR_A024390_20211106T155550.zip
+unzip L1C_T18TXR_A024390_20211106T155550.zip
+```
+
+Grab the desired bands and stack them, [considering the Sentinel 2 spectral band assignments](https://sentinels.copernicus.eu/web/sentinel/user-guides/sentinel-2-msi/resolutions/spatial).
+
+```sh
+rio stack --rgb S2B_MSIL1C_20211106T155439_N0301_R054_T18TWR_20211106T193705.SAFE/GRANULE/L1C_T18TWR_A024390_20211106T155550/IMG_DATA/T18TWR_20211106T155439_B0{4,3,2}.jp2 -o T18TWR_stack.tif -f "GTiff" --overwrite
+rio stack --rgb S2B_MSIL1C_20211106T155439_N0301_R054_T18TXR_20211106T193705.SAFE/GRANULE/L1C_T18TXR_A024390_20211106T155550/IMG_DATA/T18TXR_20211106T155439_B0{4,3,2}.jp2 -o T18TXR_stack.tif -f "GTiff" --overwrite
+
+```
+Mosaic the two scenes and reproject
+
+```sh
+rio merge T18TWR_stack.tif T18TXR_stack.tif -o T18_stack.tif -f "GTiff" --overwrite
+rio warp T18_stack.tif T18_geog.tif --dst-crs EPSG:4326 --overwrite
+```
+
+Clip to montreal bounds
+
+```sh
+ogr2ogr -f "GeoJSON" montreal_bound.geojson \
+  PG:"dbname=maptember_2021" \
+  -sql "SELECT ST_Simplifypreservetopology(the_geom,0.001) FROM montreal_bound" \
+  -lco RFC7946=YES
+rio mask T18_geog.tif -o T18_mask.tif --geojson-mask - --overwrite < montreal_bound.geojson
+```
+
+Rescale to 0-255
+```sh
+gdal_translate -of "GTiff" -scale 0 65535 0 255 -ot Byte T18_mask.tif T18_byte.tif
+```
+
+Color correct
+
+Let's punch up the color on the green a little bit, and oversaturate the whole thing a smidge.
+
+```sh
+rio color T18_byte.tif T18_color.tif gamma g 2.0 gamma br 1.95 sigmoidal rgb 85 0.13 saturation 1.15
+```
+
+And publish!
+
+```sh
+tilesets upload-source landplanner day-10-source T18_color.tif
+
+echo '{
+  "version": 1,
+  "layers": {
+    "day_10": {
+      "source": "mapbox://tileset-source/landplanner/day-10-source",
+      "minzoom": 0,
+      "maxzoom": 14
+    }
+  }
+}' > day_10_recipe.json
+
+tilesets create landplanner.day-10-tiles --recipe day_10_recipe.json --name "day_10"
+tilesets publish landplanner.day-10-tiles
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckvsle95w00tm14phes2rrqqb.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3)
+
+![day_10](img/day_10.png)
+
 ## Day 11: 3D
 
 ## Day 12: Population
