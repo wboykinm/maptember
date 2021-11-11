@@ -8,7 +8,7 @@ Having a scratch PostGIS database for processing never hurt, so I'll start there
 
 ```sh
 createdb maptember_2021
-psql maptember_2021 -c "CREATE EXTENSION postgis;"
+psql maptember_2021 -c "CREATE EXTENSION postgis;CREATE EXTENSION postgis_raster;"
 ```
 
 For data, I'll look North (at least at first) to a city I've greatly missed over these two years: Montréal. Données Québec [has an excellent open data page for Montréal](https://www.donneesquebec.ca/organisation/ville-de-montreal/), similar in scope to the [VCGI](https://vcgi.vermont.gov/) resources I used last year. Note there's [some intrigue with download methods](https://www.donneesquebec.ca/foire-aux-questions/#ftp), but `curl` or `wget` seems to do the trick.
@@ -423,6 +423,119 @@ tilesets publish landplanner.day-10-tiles
 ![day_10](img/day_10.png)
 
 ## Day 11: 3D
+
+Let's try some buildings and mountains! Once again Données Québec has excellent building data, though it's a bit broken up and needs reassembly.
+
+Grab and ingest all the necessary data to the DB, using a text file with [these URLs](https://www.donneesquebec.ca/recherche/dataset/vmtl-batiment-2d#) scraped into it.
+
+```sh
+mkdir tmp
+cd tmp
+psql maptember_2021 -c "DROP TABLE IF EXISTS batiment_cote; DROP TABLE IF EXISTS batiment_toit;"
+while IFS= read -r c; do
+  wget -c ${c}
+  FILE="${c##*/}"
+  unzip $FILE
+  echo "Extracting $FILE"
+  # Add the point and polygon components to the DB
+  ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" "CARTO-BAT-COTE.shp" -append -nln batiment_cote -lco GEOMETRY_NAME=the_geom -progress -nlt PROMOTE_TO_MULTI
+  ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" "CARTO-BAT-TOIT.shp" -append -nln batiment_toit -lco GEOMETRY_NAME=the_geom -progress -nlt PROMOTE_TO_MULTI
+  # clean up for the next one
+  rm -rf *
+done < ../batiment_urls.txt
+cd ../
+rm -r tmp/
+```
+
+Also grab the local DEM from [Opendata Canada](https://open.canada.ca/data/en/dataset/7f245e4d-76c2-4caa-951a-45d1d2051333/resource/6db38ca4-9f94-4e04-b746-c8ebeb78bb93), because the building dataset heights are reported as absolute elevation. Mercifully, the city is covered by 1 DEM.
+
+```sh
+wget -c https://ftp.maps.canada.ca/pub/nrcan_rncan/elevation/cdem_mnec/031/cdem_dem_031H_tif.zip
+unzip cdem_dem_031H_tif.zip
+# send it to the DB
+raster2pgsql -I -F -s 4617 -t 100x100 cdem_dem_031H.tif cdem_dem_031h | psql maptember_2021
+```
+
+With a really expensive join, combine the footprints with the building height points, choosing the highest of each polygon (major oversimplification, but it'll have to do for now).
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS batiment;
+  CREATE TABLE batiment AS (
+    WITH joined AS (
+      SELECT
+        replace(replace(c.elevation,',','.'),' ','')::float AS elev_m,
+        t.the_geom
+      FROM batiment_toit t
+      JOIN batiment_cote c ON ST_Intersects(c.the_geom,t.the_geom)
+    )
+    SELECT
+      max(elev_m) AS elev_m,
+      count(elev_m) AS count_cote,
+      the_geom
+    FROM joined
+    GROUP BY the_geom
+  )
+"
+```
+
+We do a bit of a dance to use the [`rasterstats`](https://pythonhosted.org/rasterstats/cli.html) module for `rasterio`:
+
+```sh
+# export to geojson
+ogr2ogr -t_srs "EPSG:4326" \
+  -f "GeoJSON" batiment.geojson \
+  PG:"dbname=maptember_2021" \
+  -sql "SELECT * FROM batiment"
+
+# get elevation stats
+fio cat batiment.geojson | rio zonalstats -r cdem_dem_031H.tif > batiment_elev.geojson
+
+# back to the DB
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" "batiment_elev.geojson" -nln batiment_elev -lco GEOMETRY_NAME=the_geom -progress -nlt PROMOTE_TO_MULTI
+
+# get relative building height
+psql maptember_2021 -c "DROP TABLE IF EXISTS batiments;
+  CREATE TABLE batiments AS (
+    SELECT
+      COALESCE((elev_m - _mean),elev_m) AS bld_height_m,
+      _mean AS base_height_m,
+      (CASE WHEN _mean > -50 THEN true ELSE false END) AS has_relative,
+      the_geom
+    FROM batiment_elev
+  )
+"
+```
+
+Export and send to a tileset!
+
+```sh
+# Export to geojsonl
+ogr2ogr -t_srs "EPSG:4326" \
+  -f "GeoJSONSeq" day_11.geojson.ld \
+  PG:"dbname=maptember_2021" \
+  -sql "SELECT * FROM batiments"
+
+# configure and publish
+tilesets upload-source landplanner day-11-source day_11.geojson.ld
+
+echo '{
+  "version": 1,
+  "layers": {
+    "day_11": {
+      "source": "mapbox://tileset-source/landplanner/day-11-source",
+      "minzoom": 9,
+      "maxzoom": 16
+    }
+  }
+}' > day_11_recipe.json
+
+tilesets create landplanner.day-11-tiles --recipe day_11_recipe.json --name "day_11"
+tilesets publish landplanner.day-11-tiles
+```
+
+Because Mapbox Studio has gotten pretty sophisticated with the 3D, I'll run everything through [this style](https://api.mapbox.com/styles/v1/landplanner/ckvts1b060sqf14qt6dwgg78c.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3).
+
+![day_11](img/day_11.png)
 
 ## Day 12: Population
 
