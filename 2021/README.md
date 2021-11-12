@@ -539,7 +539,72 @@ Because Mapbox Studio has gotten pretty sophisticated with the 3D, I'll run ever
 
 ## Day 12: Population
 
+Let's get the Canadian equivalent of block groups (Dissemination areas) from [Stats Canada](https://www12.statcan.gc.ca/census-recensement/alternative_alternatif.cfm?l=eng&dispext=zip&teng=lda_000b16a_e.zip&k=%20%20%20%2090414&loc=http://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/files-fichiers/2016/lda_000b16a_e.zip)!
+
+```sh
+wget -c https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/files-fichiers/2016/lda_000b16a_e.zip
+unzip lda_000b16a_e.zip
+```
+
+And tabular data [From here](https://www12.statcan.gc.ca/census-recensement/2016/dp-pd/hlt-fst/pd-pl/comprehensive.cfm), as `T1901EN.csv`, then preprocess out the population data.
+
+```sh
+echo "geo_code,population_2016" > dissemination_area_stats.csv
+head -n $(( $(wc -l T1901EN.csv | awk '{print $1}') - 9 )) T1901EN.csv | tail -n +2 | xsv select 1,7 >> dissemination_area_stats.csv
+```
+
+Import both to the DB
+
+```sh
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" "lda_000b16a_e.shp" -nln dissemination_areas -lco GEOMETRY_NAME=the_geom -progress -nlt PROMOTE_TO_MULTI
+psql maptember_2021 -c "DROP TABLE IF EXISTS dissemination_area_stats;
+  CREATE TABLE dissemination_area_stats (geo_code text, population_2016 int);
+"
+psql maptember_2021 -c "\\copy dissemination_area_stats FROM 'dissemination_area_stats.csv' CSV HEADER"
+```
+
+Join and build dot geometries
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS mtl_stats;
+  CREATE TABLE mtl_stats AS (
+    WITH mtl_da AS (
+      SELECT d.*
+      FROM dissemination_areas d
+      JOIN montreal_bound b ON ST_Intersects(b.the_geom,d.the_geom)
+    )
+    SELECT
+      d.dauid,
+      d.the_geom,
+      s.population_2016
+    FROM mtl_da d
+    JOIN dissemination_area_stats s ON s.geo_code = d.dauid
+  );
+"
+
+psql maptember_2021 -c "DROP TABLE IF EXISTS day_12;
+  CREATE TABLE day_12 AS (
+    SELECT
+      random() * 10 AS noise,
+      (ST_Dump(ST_GeneratePoints(the_geom,population_2016))).geom AS the_geom
+    FROM mtl_stats
+  )
+"
+```
+
+Having used it often enough, I've scripted the tileset creation process, now it just needs a variable for the "day" of the challenge.
+
+```sh
+bash ../lib/to_mapbox.sh day_12 ../.env
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckvwh12aa37yz14pq0g5bfykg.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#14.65/45.50579/-73.56569/233.5/74)
+
+![day_12](img/day_12.png)
+
 ## Day 13: Data challenge 2: Natural Earth
+
+I've boxed myself in a bit here because Natural Earth data is _wonderful_ for smaller-scale maps, but maybe a bit coarse for a map of a city.
 
 ## Day 14: Map with a new tool
 
