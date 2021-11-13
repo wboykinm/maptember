@@ -658,6 +658,15 @@ psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}c;
   );
 "
 
+# 1200km buffer
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}g;
+  CREATE TABLE ${DAY}g AS (
+    SELECT
+      ST_Transform(ST_Buffer(ST_Transform(the_geom,102008),1200000),4326) AS the_geom
+    FROM ${DAY}b
+  );
+"
+
 # random length compass rose
 psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}d;
   CREATE TABLE ${DAY}d AS (
@@ -704,9 +713,9 @@ Send the buffer and the compass to MTS
 
 ```sh
 bash ../lib/to_mapbox.sh ${DAY}a ../.env
-bash ../lib/to_mapbox.sh ${DAY}c ../.env
 bash ../lib/to_mapbox.sh ${DAY}d ../.env
 bash ../lib/to_mapbox.sh ${DAY}e ../.env
+bash ../lib/to_mapbox.sh ${DAY}g ../.env
 ```
 
 ![day_13c](img/day_13c.png)
@@ -722,5 +731,11 @@ bash ../lib/vignette -i 50 -o 115 -c black -a 100 ../img/day_13b.png ../img/day_
 ![day_13](img/day_13.png)
 
 ## Day 14: Map with a new tool
+
+This one is new to me, rather than new in an absolute sense (or, regrettably, new to a slew of NFT grifters): [Marcelo Prates'](https://twitter.com/marceloprates_) [PrettyMaps](https://github.com/marceloprates/prettymaps) toolset. It does the impossible by making OSM data acquisition _easy_, and provides some real composition guidance for simple maps, which is always my weak spot.
+
+Using the [Google Collab notebook](https://colab.research.google.com/drive/16LWLxKaGW9IQ5prBEcNU7VW24lpcmO4y?usp=sharing), I generated a few maps.
+
+![day_14](img/day_14.png)
 
 ## Day 15: Map without a computer
