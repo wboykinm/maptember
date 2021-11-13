@@ -23,7 +23,7 @@ echo '{
  "layers": {
    "'${DAY}'": {
      "source": "mapbox://tileset-source/landplanner/'${DAY}'_source",
-     "minzoom": 9,
+     "minzoom": 1,
      "maxzoom": 16
    }
  }

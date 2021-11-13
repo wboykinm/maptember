@@ -604,7 +604,97 @@ bash ../lib/to_mapbox.sh day_12 ../.env
 
 ## Day 13: Data challenge 2: Natural Earth
 
-I've boxed myself in a bit here because Natural Earth data is _wonderful_ for smaller-scale maps, but maybe a bit coarse for a map of a city.
+I've boxed myself in here because Natural Earth data is _wonderful_ for smaller-scale maps, but maybe a bit coarse for a map of a city. As a result I'm going to back it up a bit and take a crack at a tribute to one of my favorite beers: [Unibroue's Fin du Monde](https://untappd.com/b/unibroue-la-fin-du-monde/6988)
+
+![fin](https://untappd.akamaized.net/site/beer_logos_hd/beer-6988_7ce73_hd.jpeg)
+
+This will require a focus overlay of the provinces of Quebec, Newfoundland and Labrador, some hillshade, and then a few generated features for the lens flare and edge fade. Should be doable in PostGIS.
+
+```
+DAY=day_13
+```
+
+Get and ingest the Admin1 features and hillshade from Natural Earth
+
+```sh
+wget -c https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip
+wget -c https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/raster/GRAY_HR_SR_OB_DR.zip
+unzip ne_10m_admin_1_states_provinces.zip
+unzip GRAY_HR_SR_OB_DR.zip
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" "ne_10m_admin_1_states_provinces.shp" -nln ne_10m_admin_1_states_provinces -lco GEOMETRY_NAME=the_geom -progress -nlt PROMOTE_TO_MULTI
+```
+
+(Send the gray hillshade [straight to MTS](https://studio.mapbox.com/tilesets/landplanner.5p5mxzpe).)
+
+Pull out the two provinces we want and send that to MTS
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}a;
+  CREATE TABLE ${DAY}a AS (
+    SELECT
+      ST_Union(the_geom) AS the_geom
+    FROM ne_10m_admin_1_states_provinces
+    WHERE adm1_code IN ('CAN-683','CAN-684','CAN-685','CAN-686')
+  )
+"
+```
+
+Build a centroid and some artifacts around it
+
+```sh
+# centroid
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}b;
+  CREATE TABLE ${DAY}b AS (
+    SELECT ST_SetSRID(ST_MakePoint(-67.83, 53.5),4326) AS the_geom
+  );
+"
+
+# 2000km buffer
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}c;
+  CREATE TABLE ${DAY}c AS (
+    SELECT
+      ST_Transform(ST_Buffer(ST_Transform(the_geom,102008),2000000),4326) AS the_geom
+    FROM ${DAY}b
+  );
+"
+
+# random length compass rose
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}d;
+  CREATE TABLE ${DAY}d AS (
+    WITH nodes AS (
+      SELECT
+        (ST_DumpPoints(the_geom)).geom AS the_geom
+      FROM ${DAY}c
+    ),
+    lines AS (
+      SELECT
+        ST_Makeline(
+          n.the_geom,
+          p.the_geom
+        ) AS the_geom
+      FROM nodes n, ${DAY}b p
+    )
+    SELECT
+      ST_LineSubstring(
+        the_geom,
+        random(),
+        1
+      ) AS the_geom
+    FROM lines
+  );
+"
+```
+
+Send the buffer and the compass to MTS
+
+```sh
+bash ../lib/to_mapbox.sh ${DAY}c ../.env
+bash ../lib/to_mapbox.sh ${DAY}d ../.env
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckvx6d2n215dp15rt6n1th2bz.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#3.86/53.46/-60.83)
+
+![day_13](img/day_13.png)
 
 ## Day 14: Map with a new tool
 
