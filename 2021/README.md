@@ -739,3 +739,35 @@ Using the [Google Collab notebook](https://colab.research.google.com/drive/16LWL
 ![day_14](img/day_14.png)
 
 ## Day 15: Map without a computer
+
+## Day 16: Urban/rural
+
+## Day 17: Land
+
+## Day 18: Water
+
+## Day 19: Islands
+
+## Day 20: Movement
+
+## Day 21: Elevation
+
+## Day 22: Boundaries
+
+## Day 23: Data challenge: GHSL
+
+I had not dealt with the [GHSL data](https://ghsl.jrc.ec.europa.eu/data.php) before, and it looks compelling.
+
+## Day 24: Historical map
+
+## Day 25: Interactive map
+
+## Day 26: Choropleth map
+
+## Day 27: Heatmap
+
+## Day 28: The Earth is not flat
+
+## Day 29: NULL
+
+## Day 30: Metamapping

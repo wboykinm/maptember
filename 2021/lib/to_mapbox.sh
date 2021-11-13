@@ -24,7 +24,7 @@ echo '{
    "'${DAY}'": {
      "source": "mapbox://tileset-source/landplanner/'${DAY}'_source",
      "minzoom": 1,
-     "maxzoom": 16
+     "maxzoom": 13
    }
  }
 }' > ${DAY}_recipe.json
