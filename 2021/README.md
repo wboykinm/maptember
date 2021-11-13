@@ -649,11 +649,11 @@ psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}b;
   );
 "
 
-# 2000km buffer
+# 1500km buffer
 psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}c;
   CREATE TABLE ${DAY}c AS (
     SELECT
-      ST_Transform(ST_Buffer(ST_Transform(the_geom,102008),2000000),4326) AS the_geom
+      ST_Transform(ST_Buffer(ST_Transform(the_geom,102008),1500000),4326) AS the_geom
     FROM ${DAY}b
   );
 "
@@ -683,16 +683,41 @@ psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}d;
     FROM lines
   );
 "
+
+# punch out the provinces
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}e;
+  CREATE TABLE ${DAY}e AS (
+    SELECT
+      ST_Difference(d.the_geom, a.the_geom) AS the_geom
+    FROM ${DAY}d d
+    JOIN ${DAY}a a ON ST_Intersects(a.the_geom, d.the_geom)
+  )
+"
 ```
+
+This is really a lot more fun than I thought I'd be having . . .
+
+![day_13a](img/day_13a.png)
+
 
 Send the buffer and the compass to MTS
 
 ```sh
+bash ../lib/to_mapbox.sh ${DAY}a ../.env
 bash ../lib/to_mapbox.sh ${DAY}c ../.env
 bash ../lib/to_mapbox.sh ${DAY}d ../.env
+bash ../lib/to_mapbox.sh ${DAY}e ../.env
 ```
 
+![day_13c](img/day_13c.png)
+
 [New style](https://api.mapbox.com/styles/v1/landplanner/ckvx6d2n215dp15rt6n1th2bz.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#3.86/53.46/-60.83)
+
+Pull out [this excellent vignette script](http://www.fmwconcepts.com/imagemagick/vignette/index.php) to apply to the output
+
+```sh
+bash ../lib/vignette -i 50 -o 115 -c black -a 100 ../img/day_13b.png ../img/day_13.png
+```
 
 ![day_13](img/day_13.png)
 
