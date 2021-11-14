@@ -750,7 +750,7 @@ But the easiest view for me to imagine badly sketching is [this one - with the s
 
 These two examples are from the leading edge of a wave of birds eye view creation that would lead in a much more cartographic direction, but even these painterly precursers are clear in their orientation and geographic references. It was fun to hash out the Bartlett version:
 
-![day_15](img/day_15.png)
+![day_15](img/day_15.jpeg)
 
 
 
