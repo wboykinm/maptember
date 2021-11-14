@@ -742,15 +742,15 @@ Using the [Google Collab notebook](https://colab.research.google.com/drive/16LWL
 
 Just before COVID, a local museum asked me to do [a digital work](https://burlington.one/birdseye/) to accompany an exhibit of birds eye view lithographs from the 19th century. In the process I found some amazing views of Montréal. My favorite is probably "Montréal From the Mountain" by [Edwin Whitefield, from 1858.](https://www.christies.com/en/lot/lot-5874110)
 
-![day_15a](day_15a.png)
+![day_15a](img/day_15a.png)
 
 But the easiest view for me to imagine badly sketching is [this one - with the same title - by William Bartlett from 1840](https://commons.m.wikimedia.org/wiki/File:Montreal_from_the_Mountain.jpg).
 
-![day_15b](day_15b.jpeg)
+![day_15b](img/day_15b.jpeg)
 
 These two examples are from the leading edge of a wave of birds eye view creation that would lead in a much more cartographic direction, but even these painterly precursers are clear in their orientation and geographic references. It was fun to hash out the Bartlett version:
 
-![day_15](day_15.png)
+![day_15](img/day_15.png)
 
 
 
