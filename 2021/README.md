@@ -752,9 +752,49 @@ These two examples are from the leading edge of a wave of birds eye view creatio
 
 ![day_15](img/day_15.jpeg)
 
-
-
 ## Day 16: Urban/rural
+
+A partnership between Esri, National Geographic, and Microsoft earlier this year produced [an openly-licensed land cover map of the world](https://samapriya.github.io/awesome-gee-community-datasets/projects/esrilc2020/) at a previously-unthinkable 10-meter resolution, using data from the Sentinel-2 instrument of the ESA. It's a good candidate for mapping the types of things we might typically call rural or urban.
+
+Download the [appropriate tile](https://www.arcgis.com/apps/instant/media/index.html?appid=fc92d38533d440078f17678ebc20e8e2) of the land cover data:
+
+```sh
+wget -c https://ai4edataeuwest.blob.core.windows.net/io-lulc/io-lulc-model-001-v01-composite-v03-supercell-v02-clip-v01/18T_20200101-20210101.tif
+```
+
+Clip and convert to vector:
+
+```sh
+rio warp 18T_20200101-20210101.tif esri_lulc_18t_geog.tif --dst-crs EPSG:4326 --overwrite
+
+rio clip esri_lulc_18t_geog.tif esri_lulc_18t_mtl.tif --bounds "-74.7558784397 45.015287381 -72.5476261945 46.3299328176" --overwrite
+
+rio shapes esri_lulc_18t_mtl.tif --bidx 1 --precision 5 --sequence > esri_lulc_18t_mtl.geojsonl
+```
+
+Send to MTS
+
+```sh
+DAY=day_16
+tilesets upload-source landplanner ${DAY}_source esri_lulc_18t_mtl.geojsonl
+echo '{
+ "version": 1,
+ "layers": {
+   "'${DAY}'": {
+     "source": "mapbox://tileset-source/landplanner/'${DAY}'_source",
+     "minzoom": 1,
+     "maxzoom": 10
+   }
+ }
+}' > ${DAY}_recipe.json
+tilesets create landplanner.${DAY}_tiles --recipe ${DAY}_recipe.json --name "${DAY}"
+tilesets publish landplanner.${DAY}_tiles
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckw1h01ns6gg014qa7aggsh7h.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#8.97/45.5261/-73.647/330)
+
+![day_16](img/day_16.png)
+
 
 ## Day 17: Land
 
@@ -767,6 +807,14 @@ These two examples are from the leading edge of a wave of birds eye view creatio
 ## Day 21: Elevation
 
 ## Day 22: Boundaries
+
+"We are overdue something that reflects the present. We are overdue a celebration." - A. Cope
+
+https://www.youtube.com/watch?v=WbRRrYEgtRU
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckw0yqrr92tkx15mra3dvf6s0.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#16.49/45.508769/-73.561592)
+
+![day_22](img/day_22.jpeg)
 
 ## Day 23: Data challenge: GHSL
 
