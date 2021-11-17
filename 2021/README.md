@@ -798,6 +798,23 @@ tilesets publish landplanner.${DAY}_tiles
 
 ## Day 17: Land
 
+```sh
+DAY=day_17
+
+https://data.montreal.ca/dataset/1dc557c2-8147-417c-8e9a-1c00a9e5aff2/resource/61952fdb-f6e9-4e7e-84c1-81eb27f640a8/download/canopee-2015-agglomeration-de-montreal.zip
+# manually extract and rename the shapefile components! The accents throw off processing!
+
+# send to the DB
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" "canopee-2015-agglomeration-de-montreal/canopee_2015_agglomeration_de_mtl.shp" -nln ${DAY} -lco GEOMETRY_NAME=the_geom -progress -nlt PROMOTE_TO_MULTI
+
+# Send to Mapbox
+bash ../lib/to_mapbox.sh ${DAY} ../.env
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckw2g64l90u9f14p9ug3xd912.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#14.55/45.51031/-73.5816/317.2/85)
+
+![day_17](img/day_17.png)
+
 ## Day 18: Water
 
 ## Day 19: Islands
