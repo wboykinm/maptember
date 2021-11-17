@@ -817,6 +817,10 @@ bash ../lib/to_mapbox.sh ${DAY} ../.env
 
 ## Day 18: Water
 
+Entirely in [Mapbox Studio](https://api.mapbox.com/styles/v1/landplanner/ckw3t7l980qsi14myoxhbr4fp.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.41/45.5496/-73.6138/345) today.
+
+![day_18](img/day_18.png)
+
 ## Day 19: Islands
 
 ## Day 20: Movement
