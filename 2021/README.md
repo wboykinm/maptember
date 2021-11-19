@@ -8,7 +8,11 @@ Having a scratch PostGIS database for processing never hurt, so I'll start there
 
 ```sh
 createdb maptember_2021
-psql maptember_2021 -c "CREATE EXTENSION postgis;CREATE EXTENSION postgis_raster;"
+psql maptember_2021 -c '
+  CREATE EXTENSION postgis;
+  CREATE EXTENSION postgis_raster;
+  CREATE EXTENSION "uuid-ossp";
+'
 ```
 
 For data, I'll look North (at least at first) to a city I've greatly missed over these two years: Montréal. Données Québec [has an excellent open data page for Montréal](https://www.donneesquebec.ca/organisation/ville-de-montreal/), similar in scope to the [VCGI](https://vcgi.vermont.gov/) resources I used last year. Note there's [some intrigue with download methods](https://www.donneesquebec.ca/foire-aux-questions/#ftp), but `curl` or `wget` seems to do the trick.
@@ -141,7 +145,7 @@ psql maptember_2021 -c "DROP TABLE IF EXISTS montreal_bound;
         ST_Union(
           ST_Buffer(the_geom, 0.001)
         )
-      ) AS the_geom
+      )::geometry(MultiPolygon, 4326) AS the_geom
     FROM limitespdq
   );
 "
@@ -823,7 +827,68 @@ Entirely in [Mapbox Studio](https://api.mapbox.com/styles/v1/landplanner/ckw3t7l
 
 ## Day 19: Islands
 
+I _could_ phone this in by pointing out that the city of Montréal itself is an island, but let's instead take a look at _all_ of the islands in this stretch of the Saint Lawrence. With a bit of [geometry arrangement magic by Andrew Hill](https://gist.github.com/wboykinm/43843091189ecfa0c072).
+
+```sh
+DAY=day_19
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}_set; DROP TABLE IF EXISTS ${DAY};
+  CREATE TABLE ${DAY}_set AS (
+    WITH multis AS (
+      SELECT
+        (ST_Dump(the_geom)).geom AS the_geom
+      FROM montreal_metro
+    )
+    SELECT
+      uuid_generate_v4() AS isle_id,
+      the_geom
+    FROM multis
+    WHERE ST_Contains(
+      (SELECT ST_Transform(ST_Buffer(ST_Transform(the_geom,3857),20000),4326) FROM montreal_bound),
+      the_geom
+    )
+  );
+  CREATE TABLE ${DAY} AS (
+    WITH RECURSIVE
+      dims AS (
+          SELECT 2*sqrt(sum(ST_Area(the_geom))) as d, sqrt(sum(ST_Area(the_geom)))/20 as w, count(*) as rows FROM ${DAY}_set WHERE the_geom IS NOT NULL),   
+      geoms AS (
+          SELECT the_geom, isle_id, ST_YMax(the_geom)-ST_YMin(the_geom) as height FROM ${DAY}_set WHERE the_geom IS NOT NULL ORDER BY ST_YMax(the_geom)-ST_YMin(the_geom)  DESC),  
+      geomval AS (
+          SELECT the_geom, isle_id, row_number() OVER (ORDER BY height DESC) as id from geoms),  
+      positions(isle_id, the_geom,x_offset,y_offset,new_row,row_offset) AS (     
+          (SELECT isle_id, the_geom, 0.0::float, 0.0::float, FALSE, 2 from geomval limit 1)    
+          UNION ALL       
+          (SELECT
+              (SELECT isle_id FROM geomval WHERE id = p.row_offset),
+              (SELECT the_geom FROM geomval WHERE id = p.row_offset),
+              CASE WHEN p.x_offset < s.d THEN (SELECT (s.w+(ST_XMax(the_geom) - ST_XMin(the_geom)))+p.x_offset FROM geomval WHERE id = p.row_offset) ELSE 0 END as x_offset,
+              CASE WHEN p.x_offset < s.d THEN p.y_offset ELSE (SELECT (s.w+(ST_YMax(the_geom) - ST_YMin(the_geom)))+p.y_offset FROM geomval WHERE id = p.row_offset) END as y_offset , FALSE, p.row_offset+1
+          FROM positions p, dims s
+          WHERE p.row_offset < s.rows ) ),  
+      sfact AS (    
+          SELECT ST_XMin(the_geom) as x, ST_YMax(the_geom) as y FROM geomval LIMIT 1  )
+    SELECT
+        ST_Transform(ST_Translate( the_geom, (x - ST_XMin(the_geom) - x_offset), (y - ST_YMin(the_geom) - y_offset)),3857) as the_geom_webmercator, isle_id
+    FROM positions,sfact
+    order by row_offset asc
+  );
+"
+```
+
+Send to MTS
+`bash ../lib/to_mapbox.sh ${DAY} ../.env`
+
+Including Montréal itself and Laval, there are 141 distinct islands in the Saint Lawrence and its tributaries within 20km of the city. Some of them contain people, some of them contain crops, and some of them contain deer.
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckw5qmmy1195u14o3qf4kccle.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#0.56/0/0)
+
+![day_19](img/day_19.png)
+
 ## Day 20: Movement
+
+```sh
+wget -c https://data.montreal.ca/dataset/584de76b-13b9-47ea-af12-0c37b8eb5de5/resource/7c521d09-7e84-4759-856e-b5a04b95330a/download/comptages_vehicules_cyclistes_pietons.geojson
+```
 
 ## Day 21: Elevation
 
