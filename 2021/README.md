@@ -920,8 +920,9 @@ bash ../lib/to_mapbox.sh ${DAY} ../.env
 
 The [new style](https://api.mapbox.com/styles/v1/landplanner/ckw78uewp1mcn16pddquingmw.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3) here is purely aesthetic: there are some important caveats:
 
-1. There is no real planning meaning in the "Average cyclists per point count" metric
-2. There is sampling bias in play, as the locations and times were not chosen at random
+1. There is no real planning meaning in the "Average cyclists per point count" metric.
+2. There is sampling bias in play, as the locations and times were not chosen at random.
+3. There is no easy balance between geographic coverage and temporal consistency, so I erred on the side of the former.
 
 ![day_20](img/day_20.png)
 
