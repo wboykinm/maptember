@@ -886,9 +886,44 @@ Including Montréal itself and Laval, there are 141 distinct islands in the Sain
 
 ## Day 20: Movement
 
+Back to the excellent Donées Québec for some traffic count data!
+
 ```sh
+DAY=day_20
 wget -c https://data.montreal.ca/dataset/584de76b-13b9-47ea-af12-0c37b8eb5de5/resource/7c521d09-7e84-4759-856e-b5a04b95330a/download/comptages_vehicules_cyclistes_pietons.geojson
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" comptages_vehicules_cyclistes_pietons.geojson -overwrite -nln comptages_vehicules_cyclistes_pietons -nlt PROMOTE_TO_MULTI -lco GEOMETRY_NAME=the_geom -progress
 ```
+
+This one is kind of gigantic. Half a million records across 598 intersections over 224 days and 9 travel modes. We'll need to aggregate a few things, and narrow in on two modes: cyclists and pedestrians.
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS day_20;
+  CREATE TABLE day_20 AS (
+    SELECT
+      nom_intersection,
+      description_code_banque,
+      the_geom,
+      count(distinct date) AS day_count,
+      count(distinct date::text || ' - ' || periode::text) AS timestamp_count,
+      sum(approche_nord + approche_sud + approche_est + approche_ouest) AS total_count,
+      sum(approche_nord + approche_sud + approche_est + approche_ouest) / count(distinct date::text || ' - ' || periode::text) AS avg_per_timestamp
+    FROM comptages_vehicules_cyclistes_pietons
+    WHERE description_code_banque IN ('Velos','Pietons')
+    --AND date = '2021-06-03'
+    GROUP BY nom_intersection,the_geom, description_code_banque
+    ORDER BY sum(approche_nord + approche_sud + approche_est + approche_ouest) / count(distinct date::text || ' - ' || periode::text) DESC
+  );
+"
+
+bash ../lib/to_mapbox.sh ${DAY} ../.env
+```
+
+The [new style](https://api.mapbox.com/styles/v1/landplanner/ckw78uewp1mcn16pddquingmw.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3) here is purely aesthetic: there are some important caveats:
+
+1. There is no real planning meaning in the "Average cyclists per point count" metric
+2. There is sampling bias in play, as the locations and times were not chosen at random
+
+![day_20](img/day_20.png)
 
 ## Day 21: Elevation
 
