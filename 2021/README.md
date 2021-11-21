@@ -738,7 +738,7 @@ bash ../lib/vignette -i 50 -o 115 -c black -a 100 ../img/day_13b.png ../img/day_
 
 This one is new to me, rather than new in an absolute sense (or, regrettably, new to a slew of NFT grifters): [Marcelo Prates'](https://twitter.com/marceloprates_) [PrettyMaps](https://github.com/marceloprates/prettymaps) toolset. It does the impossible by making OSM data acquisition _easy_, and provides some real composition guidance for simple maps, which is always my weak spot.
 
-Using the [Google Collab notebook](https://colab.research.google.com/drive/16LWLxKaGW9IQ5prBEcNU7VW24lpcmO4y?usp=sharing), I generated a few maps.
+Using the [Google Collab notebook](https://colab.research.google.com/drive/1PM0N9tvK4BMtwCee7MEm_oDvhff3UCKL?usp=sharing), I generated a few maps.
 
 ![day_14](img/day_14.png)
 
