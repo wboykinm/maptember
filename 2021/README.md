@@ -928,8 +928,74 @@ The [new style](https://api.mapbox.com/styles/v1/landplanner/ckw78uewp1mcn16pddq
 
 ## Day 21: Elevation
 
-Back on day 11 we grabbed some elevation data for the city, so let's make some Tanaka-style contour polygons from that, using [Andy Woodfruff's rundown of potential methods](https://www.axismaps.com/blog/contour-maps-in-a-web-browser).
+Back on day 11 we grabbed some elevation data for the city, so let's make some Tanaka-style contour polygons from that, using [Andy Woodruff's rundown of potential methods](https://www.axismaps.com/blog/contour-maps-in-a-web-browser).
 
+`DAY=day_21`
+
+Convert the DEM to contour vectors with [gdal_contour](https://gdal.org/programs/gdal_contour.html):
+
+```sh
+gdal_contour -a elev_m cdem_dem_031H.tif cdem_dem_031H.geojson -i 10.0
+
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" cdem_dem_031H.geojson -overwrite -nln cdem_dem_031H -lco GEOMETRY_NAME=the_geom -progress
+
+```
+
+Create polygon representations, with [some pretty wild tactics for coverting between polygon and line](https://stackoverflow.com/a/7645678/1676407).
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY}; DROP TABLE IF EXISTS ${DAY}_lines;
+  CREATE TABLE ${DAY}_lines AS (
+    SELECT
+      c.the_geom,
+      c.elev_m
+    FROM cdem_dem_031H c
+    JOIN montreal_bound b ON ST_Intersects(c.the_geom, b.the_geom)
+    WHERE ST_IsClosed(c.the_geom) = true
+    ORDER BY c.elev_m ASC
+  );
+  INSERT INTO ${DAY}_lines
+  SELECT ST_MakeLine(sp,ep),0
+  FROM
+   -- extract the endpoints for every 2-point line segment for each linestring
+   (SELECT
+      ST_PointN(geom, generate_series(1, ST_NPoints(geom)-1)) as sp,
+      ST_PointN(geom, generate_series(2, ST_NPoints(geom)  )) as ep
+    FROM
+       -- extract the individual linestrings
+      (SELECT (ST_Dump(ST_Boundary(the_geom))).geom
+       FROM montreal_bound
+       ) AS linestrings
+    ) AS segments
+  ;
+  CREATE TABLE ${DAY} AS (
+    SELECT
+      ST_MakePolygon(the_geom) AS the_geom,
+      elev_m
+    FROM ${DAY}_lines
+    WHERE ST_IsClosed(the_geom) = true
+    ORDER BY elev_m ASC
+  );
+  INSERT INTO ${DAY}
+    SELECT the_geom, 0 FROM montreal_bound
+  ;
+"
+```
+
+Send to MTS
+
+```sh
+bash ../lib/to_mapbox.sh ${DAY} ../.env
+bash ../lib/to_mapbox.sh ${DAY}_lines ../.env
+```
+
+Labor-intensive layer configuration:
+
+![layers](img/day_21b.png)
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckw9hxapz1fe814pevyfl92ih.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#12.26/45.48561/-73.5855/274.4/70)
+
+![day_21](img/day_21.png)
 
 
 ## Day 22: Boundaries
