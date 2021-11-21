@@ -928,15 +928,23 @@ The [new style](https://api.mapbox.com/styles/v1/landplanner/ckw78uewp1mcn16pddq
 
 ## Day 21: Elevation
 
+Back on day 11 we grabbed some elevation data for the city, so let's make some Tanaka-style contour polygons from that, using [Andy Woodfruff's rundown of potential methods](https://www.axismaps.com/blog/contour-maps-in-a-web-browser).
+
+
+
 ## Day 22: Boundaries
 
 "We are overdue something that reflects the present. We are overdue a celebration." - A. Cope
 
 https://www.youtube.com/watch?v=WbRRrYEgtRU
 
-[New style](https://api.mapbox.com/styles/v1/landplanner/ckw0yqrr92tkx15mra3dvf6s0.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#16.49/45.508769/-73.561592)
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckw9f9f7z1ctd14peu1xkodaz.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#18.45/45.5086512/-73.56196/218.5/84)
 
-![day_22](img/day_22.jpeg)
+![cohen](https://upload.wikimedia.org/wikipedia/commons/a/aa/Leonard_Cohen_Mural%2C_Montreal.jpg)
+
+[Leonard Cohen mural image via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Leonard_Cohen_Mural,_Montreal.jpg)
+
+![day_22](img/day_22.png)
 
 ## Day 23: Data challenge: GHSL
 
