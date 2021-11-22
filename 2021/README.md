@@ -1000,15 +1000,19 @@ Labor-intensive layer configuration:
 
 ## Day 22: Boundaries
 
-"We are overdue something that reflects the present. We are overdue a celebration." - A. Cope
-
-https://www.youtube.com/watch?v=WbRRrYEgtRU
-
-[New style](https://api.mapbox.com/styles/v1/landplanner/ckw9f9f7z1ctd14peu1xkodaz.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#18.45/45.5086512/-73.56196/218.5/84)
-
-![cohen](https://upload.wikimedia.org/wikipedia/commons/a/aa/Leonard_Cohen_Mural%2C_Montreal.jpg)
+![cohen](https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Leonard_Cohen_Mural%2C_Montreal.jpg/320px-Leonard_Cohen_Mural%2C_Montreal.jpg)
 
 [Leonard Cohen mural image via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Leonard_Cohen_Mural,_Montreal.jpg)
+
+NACIS 2017 in Montréal was magic for me; my first time at the conference, surrounded by my heroes. For reasons I don't recall, I stumbled into [Aaron Cope's talk about the internal boundaries of the host city - his home city - and the troubled history of language and power within.](https://www.youtube.com/watch?v=WbRRrYEgtRU)
+
+His modest proposal to address some of the past strife was to rename The Main - the city's traditional Anglophone/Francophone dividing line - after Leonard Cohen, then recently-deceased, and seemingly loved by all regardless of mother tongue. As Aaron put it:
+
+"We are overdue something that reflects the present. We are overdue a celebration."
+
+You should really watch [the recording of his talk](https://www.youtube.com/watch?v=WbRRrYEgtRU).
+
+. . . and check out [Boulevard Leonard Cohen](https://api.mapbox.com/styles/v1/landplanner/ckw9f9f7z1ctd14peu1xkodaz.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#18.45/45.5086512/-73.56196/218.5/84).
 
 ![day_22](img/day_22.png)
 
