@@ -1018,7 +1018,49 @@ You should really watch [the recording of his talk](https://www.youtube.com/watc
 
 ## Day 23: Data challenge: GHSL
 
-I had not dealt with the [GHSL data](https://ghsl.jrc.ec.europa.eu/data.php) before, and it looks compelling.
+I had not dealt with the [GHSL data](https://ghsl.jrc.ec.europa.eu/data.php) before, and it looks compelling. Matt Daniels provided [an excellent walkthrough](https://blog.mapbox.com/3d-mapping-global-population-density-how-i-built-it-141785c91107) of how he built an entire application around it, which provides just enough context to get started on:
+
+__A map of the expansion of metro Montréal over 40 years__
+
+`DAY=day_23`
+
+Get the 40 year split datasets
+
+```sh
+wget -c http://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GPW4_GLOBE_R2015A/GHS_POP_GPW41975_GLOBE_R2015A_54009_250/V1-0/GHS_POP_GPW41975_GLOBE_R2015A_54009_250_v1_0.zip
+wget -c http://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GPW4_GLOBE_R2015A/GHS_POP_GPW42015_GLOBE_R2015A_54009_250/V1-0/GHS_POP_GPW42015_GLOBE_R2015A_54009_250_v1_0.zip
+unzip GHS_POP_GPW41975_GLOBE_R2015A_54009_250_v1_0.zip
+unzip GHS_POP_GPW42015_GLOBE_R2015A_54009_250_v1_0.zip
+```
+
+Extract just the part we care about
+
+```sh
+ogr2ogr -t_srs "EPSG:4326" \
+  -f "GeoJSON" mtl_metro_bound.geojson \
+  PG:"dbname=maptember_2021" \
+  -sql "SELECT ST_Envelope(the_geom) FROM montreal_metro" \
+  -lco RFC7946=YES
+
+gdalwarp -t_srs "EPSG:3857" -cutline mtl_metro_bound.geojson GHS_POP_GPW41975_GLOBE_R2015A_54009_250_v1_0/GHS_POP_GPW41975_GLOBE_R2015A_54009_250_v1_0.tif ghs_75_mtl.tif -crop_to_cutline
+gdalwarp -t_srs "EPSG:3857" -cutline mtl_metro_bound.geojson GHS_POP_GPW42015_GLOBE_R2015A_54009_250_v1_0/GHS_POP_GPW42015_GLOBE_R2015A_54009_250_v1_0.tif ghs_15_mtl.tif -crop_to_cutline
+```
+
+Calculate the straight-up difference, send to MTS
+
+```sh
+gdal_calc.py -A ghs_15_mtl.tif -B ghs_75_mtl.tif --outfile=ghs_delta_mtl.tif --calc="A-B" --overwrite
+
+rio shapes ghs_delta_mtl.tif --bidx 1 --precision 5 --sequence > ${DAY}.geojson
+
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" ${DAY}.geojson -overwrite -nln ${DAY} -lco GEOMETRY_NAME=the_geom -progress
+
+bash ../lib/to_mapbox.sh ${DAY} ../.env
+```
+
+. . . resulting in a [new style](https://api.mapbox.com/styles/v1/landplanner/ckwbfro9x119j14n1b6ofbjw6.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#10.09/45.5121/-73.6752/-29.7) showing concentrations of population change between 1975 and 2015.
+
+![day_23](img/day_23.png)
 
 ## Day 24: Historical map
 
