@@ -1064,6 +1064,21 @@ bash ../lib/to_mapbox.sh ${DAY} ../.env
 
 ## Day 24: Historical map
 
+The Montréal city archives contain a trove of aerial photos of various parts of the island, acquired starting in 1925. The 1947-49 survey appears to be the first concerted acquisition of the whole island, so we'll work from that. My process for dealing with raw images from aerial surveys is pretty well-established at this point, so let's get to it:
+
+Pull an image from [the archive](https://donnees.montreal.ca/ville-de-montreal/vues-aeriennes-archives):
+
+`wget -c http://archivesdemontreal.com/greffe/vues-aeriennes-archives/jpeg/CarteIndex-1947-1949.jpg`
+
+Add it to [Mapwarper and rectify it with ground control points](https://mapwarper.net/maps/60605#Preview_Rectified_Map_tab):
+
+![mapwarper](img/day_24a.png)
+
+Send it to MTS manually (because I'm still getting tripped up with the command line when using rasters), and add to [a new style](https://api.mapbox.com/styles/v1/landplanner/ckwdjp8ta392g14t8ejz1nu3s.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#10.16/45.4257/-73.494/330/75).
+
+![day_24](img/day_24.png)
+
+
 ## Day 25: Interactive map
 
 ## Day 26: Choropleth map
