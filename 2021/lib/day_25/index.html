@@ -31,12 +31,33 @@ body { margin: 0; padding: 0; }
         bottom: 0;
         width: 100%;
     }
+    .info {
+      display: block;
+      position: absolute;
+      margin: 0px auto;
+      width: 10%;
+      padding: 10px;
+      border: none;
+      border-radius: 3px;
+      font-size: 48px;
+      text-align: center;
+      color: #ffffff;
+      background: rgba(50,50,50,0.6);
+    }
+    #old {
+      left: 10%;
+    }
+    #new {
+      right: 10%;
+    }
 </style>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
 <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" type="text/css">
 <div id="comparison-container">
     <div id="before" class="map"></div>
     <div id="after" class="map"></div>
+    <pre id='old' class='info'>1947</pre>
+    <pre id='new' class='info'>2020</pre>
 </div>
 <script>
 	mapboxgl.accessToken = 'pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w';
