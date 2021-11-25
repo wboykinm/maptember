@@ -1078,8 +1078,23 @@ Send it to MTS manually (because I'm still getting tripped up with the command l
 
 ![day_24](img/day_24.png)
 
-
 ## Day 25: Interactive map
+
+Following up on yesterday, let's build a swipe map of a section of Montréal between 1947 and the present day.
+
+Collect a few likely candidates
+
+```sh
+wget -c http://archivesdemontreal.com/greffe/vues-aeriennes-archives/jpeg/VM97-3_7P7-31.jpg
+wget -c http://archivesdemontreal.com/greffe/vues-aeriennes-archives/jpeg/VM97-3_7P7-35.jpg
+wget -c http://archivesdemontreal.com/greffe/vues-aeriennes-archives/jpeg/VM97-3_7P7-39.jpg
+```
+
+. . . and take them over [to Mapwarper](https://mapwarper.net/layers/1473), for some more manual georeferencing.
+
+. . . ultimately adding them to a [swipe map](https://wboykinm.github.io/maptember/2021/lib/day_25/).
+
+![day_25](img/day_25.png)
 
 ## Day 26: Choropleth map
 
