@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Swipe between maps</title>
+<title>Montreal, 1947-2020</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.6.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.6.0/mapbox-gl.js"></script>
@@ -67,7 +67,8 @@ body { margin: 0; padding: 0; }
         center: [-73.555004, 45.512155],
         zoom: 16,
         bearing: -58,
-        hash: true
+        hash: true,
+        attributionControl: false
     });
 
     const afterMap = new mapboxgl.Map({
@@ -76,8 +77,11 @@ body { margin: 0; padding: 0; }
         center: [-73.555004, 45.512155],
         zoom: 16,
         bearing: -58,
-        hash: true
-    });
+        hash: true,
+        attributionControl: false
+    }).addControl(new mapboxgl.AttributionControl({
+      customAttribution: 'Archives de la Ville de Montréal'
+    }));
 
     // A selector or reference to HTML element
     const container = '#comparison-container';
