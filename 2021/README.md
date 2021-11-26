@@ -1098,6 +1098,54 @@ wget -c http://archivesdemontreal.com/greffe/vues-aeriennes-archives/jpeg/VM97-3
 
 ## Day 26: Choropleth map
 
+`DAY=day_26`
+
+Let's try some election mapping! There are two destinations for the data we need:
+
+1. [Government of Canada](https://open.canada.ca/data/en/dataset/e5a936e5-35e3-413c-8b11-5d495f2bdb70) for the electoral geographies
+
+```sh
+wget -c https://ftp.maps.canada.ca/pub/elections_elections/Electoral-districts_Circonscription-electorale/Elections_Canada_2019/advanced_polling_districts_boundaries_2019.shp.zip
+unzip advanced_polling_districts_boundaries_2019.shp.zip
+ogr2ogr -t_srs "EPSG:4326" -f "PostgreSQL" PG:"dbname=maptember_2021" ADVPD_CA_2019_EN.shp -overwrite -nln advpd_ca_2019_en -nlt PROMOTE_TO_MULTI -lco GEOMETRY_NAME=the_geom -progress
+```
+
+2. [Elections Canada](https://enr.elections.ca/ElectoralDistricts.aspx?lang=e) for the 2021 federal results
+
+```sh
+wget -c https://enr.elections.ca/DownloadResults.aspx
+cat EventResults.txt | tail -n +2 | head -n 4036 | in2csv -t -f csv | xsv select 1-2,4,9,11-12,14 > fedelections2021.csv
+psql maptember_2021 -c "DROP TABLE IF EXISTS fedelections2021;
+  CREATE TABLE fedelections2021 (
+    Electoral district number - Numéro de la circonscription,Integer
+    Electoral district name,Unicode
+    Type of results*,Unicode
+    Political affiliation,Unicode
+    Votes obtained - Votes obtenus,Integer
+    % Votes obtained - Votes obtenus %,Float
+    Total number of ballots cast - Nombre total de votes déposés,Integer
+  )
+"
+```
+
+. . . and then I realize those are mismatched, so - on a deadline - I go back to the Day 12 population data:
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY};
+  CREATE TABLE ${DAY} AS (
+    SELECT
+      *
+    FROM mtl_stats
+  )
+"
+
+bash ../lib/to_mapbox.sh ${DAY} ../.env
+```
+
+And put together a [new style!](https://api.mapbox.com/styles/v1/landplanner/ckwfsldvx0te514mww082okm5.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3) (probably should have started with this)
+
+![day_26](img/day_26.png)
+
 ## Day 27: Heatmap
 
 ## Day 28: The Earth is not flat
