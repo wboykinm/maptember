@@ -1148,6 +1148,31 @@ And put together a [new style!](https://api.mapbox.com/styles/v1/landplanner/ckw
 
 ## Day 27: Heatmap
 
+`DAY=day_27`
+
+We skipped a step back on day 4 and went straight to hexagons with the Donées Québec restaurant location data. Let's return to it here.
+
+```sh
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY};
+  CREATE TABLE ${DAY} AS (
+    SELECT
+      name,
+      type,
+      the_geom
+    FROM businesses
+    WHERE the_geom IS NOT NULL
+    AND statut IN ('Ouvert','En traitement')
+  );
+"
+bash ../lib/to_mapbox.sh ${DAY} ../.env
+
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckwh7da4i0mxs15qlldiiiguh.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3)
+
+![day_27](img/day_27.png)
+
+
 ## Day 28: The Earth is not flat
 
 ## Day 29: NULL
