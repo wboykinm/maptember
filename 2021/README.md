@@ -1175,6 +1175,13 @@ bash ../lib/to_mapbox.sh ${DAY} ../.env
 
 ## Day 28: The Earth is not flat
 
+Working from the amazing ["Little Big City"](https://pissang.github.io/little-big-city/), by [Yi Shen](https://twitter.com/pissang1), We spherize Montreal:
+
+[Page](https://wboykinm.github.io/little-big-city/?=true&lng=-73.5674993&lat=45.5091684&config=%7B%7D)
+
+![day_28](img/day_28.png)
+
+
 ## Day 29: NULL
 
 ## Day 30: Metamapping
