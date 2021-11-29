@@ -1184,4 +1184,33 @@ Working from the amazing ["Little Big City"](https://pissang.github.io/little-bi
 
 ## Day 29: NULL
 
+In the past I've concerned myself with [the hypothetical "Where" given insufficient geographic precision](https://www.sevendaysvt.com/vermont/wtf-why-does-google-think-vermont-is-in-morristown/Content?oid=3348157). Google thinks that "Montreal" is at the intersection of Robert-Bourassa and Réne Lévesque:
+
+![goog](img/day_29a.png)
+
+But in this case I'll look at NULLMONTREAL as a geographic centroid:
+
+```sh
+DAY=day_29
+psql maptember_2021 -c "DROP TABLE IF EXISTS ${DAY};
+  CREATE TABLE ${DAY} AS (
+    SELECT
+      ST_Centroid(the_geom) AS the_geom
+    FROM montreal_bound
+  )
+"
+bash ../lib/to_mapbox.sh ${DAY} ../.env
+
+```
+
+[New style](https://api.mapbox.com/styles/v1/landplanner/ckwk1bp2l2l6w14p334udyjg6.html?title=copy&access_token=pk.eyJ1IjoibGFuZHBsYW5uZXIiLCJhIjoiY2pmYmpmZmJrM3JjeTMzcGRvYnBjd3B6byJ9.qr2gSWrXpUhZ8vHv-cSK0w&zoomwheel=true&fresh=true#9.69/45.5074/-73.6783/330.3)
+
+![day_29](img/day_29.png)
+
+And in [Mapillary](https://www.mapillary.com/app/?pKey=275906524262857)
+
+
+![day_29b](img/day_29b.png)
+
+
 ## Day 30: Metamapping
