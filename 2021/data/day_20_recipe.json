@@ -1,0 +1,10 @@
+{
+ "version": 1,
+ "layers": {
+   "day_20": {
+     "source": "mapbox://tileset-source/landplanner/day_20_source",
+     "minzoom": 1,
+     "maxzoom": 13
+   }
+ }
+}
