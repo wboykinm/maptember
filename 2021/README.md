@@ -1214,3 +1214,9 @@ And in [Mapillary](https://www.mapillary.com/app/?pKey=275906524262857)
 
 
 ## Day 30: Metamapping
+
+I'll end with just a picture of a map. And of my family, and of fond Montréal memories.
+
+![day_30](img/day_30.jpeg)
+
+Thanks everyone for following along! Happy mapping!
