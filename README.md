@@ -3,3 +3,4 @@ Data processing methods and images associated with my entries in the ever-popula
 
 - [2020](2020/)
 - [2021](2021/)
+- [2023](2023/)
