@@ -117,3 +117,5 @@ dist
 *.hgt
 *.env
 */venv
+*/cache
+.ipynb_checkpoints/
